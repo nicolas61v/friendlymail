@@ -1,37 +1,37 @@
 # 📧 Smart Email Assistant
 
-> Automatiza respuestas inteligentes a correos repetitivos usando IA y contexto personalizado
+> Automate intelligent responses to repetitive emails using AI and personalized context
 
-## 🎯 ¿Qué hace?
+## 🎯 What does it do?
 
-Conecta tu correo, define un contexto (ej: info de tu clase), establece fecha límite, y la IA responde automáticamente emails rutinarios basándose en tu información.
+Connect your email, define a context (e.g., class info), set a deadline, and the AI automatically responds to routine emails based on your information.
 
-**Perfecto para**: Docentes con preguntas repetitivas de estudiantes, soporte técnico, consultas frecuentes.
+**Perfect for**: Teachers with repetitive student questions, tech support, frequent inquiries.
 
-## ✨ Características
+## ✨ Features
 
-- 🔗 Integración con Gmail/Outlook
-- 🤖 Respuestas inteligentes con LLM
-- 📅 Control con fechas límite
-- 🎯 Filtrado automático importante vs. rutinario
-- 📊 Dashboard de actividad
+- 🔗 Gmail/Outlook integration
+- 🤖 Intelligent responses with LLM
+- 📅 Time control with deadlines
+- 🎯 Automatic filtering important vs. routine
+- 📊 Activity dashboard
 
-## 🛠️ Stack Tecnológico
+## 🛠️ Tech Stack
 
 - **Backend**: Django/Flask (Python) + Supabase
 - **Frontend**: React + Tailwind CSS
 - **LLM**: OpenAI GPT / Anthropic Claude
 - **Deploy**: Railway / AWS
 
-## 🚀 Instalación Rápida
+## 🚀 Quick Installation
 
 ```bash
 # Backend
-git clone https://github.com/tu-usuario/smart-email-assistant.git
+git clone https://github.com/your-username/smart-email-assistant.git
 cd smart-email-assistant
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # Configurar credenciales
+cp .env.example .env  # Configure credentials
 python manage.py migrate && python manage.py runserver
 
 # Frontend
@@ -39,46 +39,46 @@ cd frontend
 npm install && npm start
 ```
 
-## ⚙️ Configuración
+## ⚙️ Configuration
 
 ```env
 # .env file
-SUPABASE_URL=tu_supabase_url
-SUPABASE_KEY=tu_supabase_key
-OPENAI_API_KEY=tu_openai_key
-GOOGLE_CLIENT_ID=tu_google_client_id
-GOOGLE_CLIENT_SECRET=tu_google_secret
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+OPENAI_API_KEY=your_openai_key
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_secret
 ```
 
-## 📖 Uso
+## 📖 Usage
 
-1. **Conecta tu email** (OAuth2 seguro)
-2. **Define contexto**:
+1. **Connect your email** (secure OAuth2)
+2. **Define context**:
    ```
-   Soy docente de Programación Web
-   Horarios: Lunes/Miércoles 2-4 PM
-   Puede responder sobre: fechas de entrega, software, conceptos de clase
-   NO responder: notas, temas médicos, quejas
+   I'm a Web Programming teacher
+   Schedule: Monday/Wednesday 2-4 PM
+   Can answer about: deadlines, software, class concepts
+   DON'T answer: grades, medical topics, complaints
    ```
-3. **Configura reglas** (fecha límite, filtros)
-4. **Monitorea actividad** en el dashboard
+3. **Configure rules** (deadline, filters)
+4. **Monitor activity** on the dashboard
 
-## 🔧 Plan de Desarrollo
+## 🔧 Development Plan
 
-- **Fase 1 (4 sem)**: MVP - Auth, Gmail, LLM básico
-- **Fase 2 (3 sem)**: Contexto, filtros, dashboard
-- **Fase 3 (3 sem)**: Múltiples providers, colas, tests
-- **Fase 4 (2 sem)**: Deploy, monitoring, docs
+- **Phase 1 (4 weeks)**: MVP - Auth, Gmail, basic LLM
+- **Phase 2 (3 weeks)**: Context, filters, dashboard
+- **Phase 3 (3 weeks)**: Multiple providers, queues, tests
+- **Phase 4 (2 weeks)**: Deploy, monitoring, docs
 
-## 🤝 Contribuir
+## 🤝 Contributing
 
 1. Fork → Feature branch → Pull Request
 2. Tests: `python -m pytest` / `npm test`
 
-## 📞 Contacto
+## 📞 Contact
 
-- 🐛 Issues: [GitHub Issues](https://github.com/tu-usuario/smart-email-assistant/issues)
-- 👥 Equipo: [@nicolas61v](https://github.com/nicolas61v)
+- 🐛 Issues: [GitHub Issues](https://github.com/your-username/smart-email-assistant/issues)
+- 👥 Team: [@nicolas61v](https://github.com/nicolas61v)
 
 ---
-⭐ **¿Te gusta? ¡Dale una estrella!** ⭐
+⭐ **Like it? Give it a star!** ⭐
