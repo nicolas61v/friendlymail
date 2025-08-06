@@ -1,29 +1,29 @@
-# 📧 Smart Email Assistant
+# Smart Email Assistant
 
 > Automate intelligent responses to repetitive emails using AI and personalized context
 
-## 🎯 What does it do?
+## What does it do?
 
 Connect your email, define a context (e.g., class info), set a deadline, and the AI automatically responds to routine emails based on your information.
 
 **Perfect for**: Teachers with repetitive student questions, tech support, frequent inquiries.
 
-## ✨ Features
+## Features
 
-- 🔗 Gmail/Outlook integration
-- 🤖 Intelligent responses with LLM
-- 📅 Time control with deadlines
-- 🎯 Automatic filtering important vs. routine
-- 📊 Activity dashboard
+- **Email Integration**: Gmail/Outlook support
+- **AI Responses**: Intelligent replies with LLM
+- **Time Control**: Deadline management
+- **Smart Filtering**: Automatic important vs. routine detection
+- **Dashboard**: Activity monitoring and analytics
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Backend**: Django/Flask (Python) + Supabase
 - **Frontend**: React + Tailwind CSS
 - **LLM**: OpenAI GPT / Anthropic Claude
 - **Deploy**: Railway / AWS
 
-## 🚀 Quick Installation
+## Quick Installation
 
 ```bash
 # Backend
@@ -39,7 +39,7 @@ cd frontend
 npm install && npm start
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ```env
 # .env file
@@ -50,7 +50,7 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_secret
 ```
 
-## 📖 Usage
+## Usage
 
 1. **Connect your email** (secure OAuth2)
 2. **Define context**:
@@ -63,22 +63,22 @@ GOOGLE_CLIENT_SECRET=your_google_secret
 3. **Configure rules** (deadline, filters)
 4. **Monitor activity** on the dashboard
 
-## 🔧 Development Plan
+## Development Plan
 
 - **Phase 1 (4 weeks)**: MVP - Auth, Gmail, basic LLM
 - **Phase 2 (3 weeks)**: Context, filters, dashboard
 - **Phase 3 (3 weeks)**: Multiple providers, queues, tests
 - **Phase 4 (2 weeks)**: Deploy, monitoring, docs
 
-## 🤝 Contributing
+## Contributing
 
-1. Fork → Feature branch → Pull Request
+1. Fork -> Feature branch -> Pull Request
 2. Tests: `python -m pytest` / `npm test`
 
-## 📞 Contact
+## Contact
 
-- 🐛 Issues: [GitHub Issues](https://github.com/your-username/smart-email-assistant/issues)
-- 👥 Team: [@nicolas61v](https://github.com/nicolas61v)
+- **Issues**: [GitHub Issues](https://github.com/your-username/smart-email-assistant/issues)
+- **Team**: [@nicolas61v](https://github.com/nicolas61v)
 
 ---
-⭐ **Like it? Give it a star!** ⭐
+**Like it? Give it a star!**
