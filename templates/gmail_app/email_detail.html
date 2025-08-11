@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <div style="margin-bottom: 1rem;">
+        <a href="{% url 'dashboard' %}" class="btn" style="background: #6c757d;">← Back to Dashboard</a>
+    </div>
+    
+    <div style="border-bottom: 2px solid #eee; padding-bottom: 1rem; margin-bottom: 1rem;">
+        <h2>{{ email.subject|default:"(No Subject)" }}</h2>
+        <div class="email-meta" style="font-size: 1em; margin-top: 10px;">
+            <p><strong>From:</strong> {{ email.sender }}</p>
+            <p><strong>To:</strong> {{ email.recipient }}</p>
+            <p><strong>Date:</strong> {{ email.received_date|date:"F d, Y H:i" }}</p>
+            <p><strong>Status:</strong> {% if email.is_read %}Read{% else %}<span style="color: #ea4335;">Unread</span>{% endif %}</p>
+        </div>
+    </div>
+    
+    <div class="email-body">
+        {% if email.body_html %}
+            <div style="border: 1px solid #eee; padding: 1rem; background: #fafafa;">
+                <h4>HTML Content:</h4>
+                <div style="background: white; padding: 1rem; margin-top: 10px;">
+                    {{ email.body_html|safe }}
+                </div>
+            </div>
+        {% endif %}
+        
+        {% if email.body_plain %}
+            <div style="margin-top: 1rem;">
+                <h4>Plain Text:</h4>
+                <pre style="background: #f8f9fa; padding: 1rem; border: 1px solid #e9ecef; border-radius: 4px; white-space: pre-wrap; font-family: Arial, sans-serif;">{{ email.body_plain }}</pre>
+            </div>
+        {% endif %}
+        
+        {% if not email.body_plain and not email.body_html %}
+            <p style="color: #666; font-style: italic;">No content available for this email.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

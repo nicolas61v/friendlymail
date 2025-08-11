@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card login-form">
+    <h2 class="text-center mb-2">Simple Login</h2>
+    <p class="text-center mb-2">For demo purposes - just enter any username</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" value="testuser" required>
+        </div>
+        <div class="form-group text-center">
+            <button type="submit" class="btn">Login</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

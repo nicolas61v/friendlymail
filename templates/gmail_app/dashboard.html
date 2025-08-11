@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% if not has_gmail %}
+<div class="card text-center">
+    <h2>Connect Your Gmail Account</h2>
+    <p class="mb-2">To view your emails, please connect your Gmail account using secure OAuth2 authentication.</p>
+    <a href="{% url 'connect_gmail' %}" class="btn btn-success">Connect Gmail Account</a>
+</div>
+{% else %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>📧 Your Gmail: {{ gmail_account.email }}</h2>
+        <a href="{% url 'sync_emails' %}" class="btn">🔄 Sync Emails</a>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Recent Emails ({{ emails.count }})</h3>
+    
+    {% if emails %}
+        {% for email in emails %}
+        <div class="email-item">
+            <div class="email-subject">
+                <a href="{% url 'email_detail' email.id %}" style="text-decoration: none; color: #1a73e8;">
+                    {{ email.subject|default:"(No Subject)" }}
+                </a>
+            </div>
+            <div class="email-meta">
+                <strong>From:</strong> {{ email.sender }}<br>
+                <strong>Date:</strong> {{ email.received_date|date:"M d, Y H:i" }}
+                {% if not email.is_read %}<span style="color: #ea4335; font-weight: bold;"> • UNREAD</span>{% endif %}
+            </div>
+            {% if email.body_plain %}
+            <div style="margin-top: 8px; color: #5f6368; font-size: 0.9em;">
+                {{ email.body_plain|truncatechars:150 }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="color: #666; text-align: center; margin: 2rem 0;">
+            No emails found. Click "Sync Emails" to fetch your latest emails.
+        </p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card text-center">
+    <h2>Welcome to FriendlyMail</h2>
+    <p class="mb-2">Connect your Gmail account and view your emails in a simple interface.</p>
+    <a href="{% url 'login' %}" class="btn">Get Started</a>
+</div>
+
+<div class="card">
+    <h3>Features</h3>
+    <ul>
+        <li>✅ Connect to Gmail with OAuth2</li>
+        <li>✅ View your inbox emails</li>
+        <li>✅ Simple and clean interface</li>
+        <li>✅ Secure authentication</li>
+    </ul>
+</div>
+{% endblock %}
