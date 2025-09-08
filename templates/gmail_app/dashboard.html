@@ -1,6 +1,19 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<!-- Error Messages with Better Styling -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}" id="message-{{ forloop.counter }}">
+            {{ message }}
+            {% if 'oauth_expired' in message.tags %}
+                <br><a href="{% url 'connect_gmail' %}" class="btn btn-primary btn-sm mt-2">Reconnect Gmail</a>
+            {% endif %}
+            <button onclick="dismissMessage('message-{{ forloop.counter }}')" style="float: right; background: none; border: none; font-size: 18px; cursor: pointer;">&times;</button>
+        </div>
+    {% endfor %}
+{% endif %}
+
 {% if not has_gmail %}
 <div class="card text-center">
     <h2>Connect Your Gmail Account</h2>
@@ -11,8 +24,28 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2>📧 Your Gmail: {{ gmail_account.email }}</h2>
-        <a href="{% url 'sync_emails' %}" class="btn">🔄 Sync Emails</a>
+        <div>
+            <a href="{% url 'sync_emails' %}" class="btn" id="sync-btn">🔄 Sync Emails</a>
+            <button onclick="toggleLogs()" class="btn btn-secondary" style="margin-left: 10px;">📋 System Logs</button>
+            <button onclick="confirmDisconnect()" class="btn btn-danger" style="margin-left: 10px;">🔌 Disconnect</button>
+        </div>
     </div>
+    
+    <!-- Connection Status -->
+    <div style="margin-top: 10px;">
+        <small style="color: #5f6368;">
+            <strong>Status:</strong> 
+            <span id="connection-status" style="color: #137333;">✅ Connected</span> | 
+            <strong>Last Updated:</strong> {{ gmail_account.updated_at|date:"M d, Y H:i" }}
+        </small>
+    </div>
+</div>
+
+<!-- System Logs Panel (Initially Hidden) -->
+<div id="logs-panel" class="card" style="display: none; max-height: 300px; overflow-y: auto; background: #f8f9fa;">
+    <h4>📋 System Logs (Last 100 entries)</h4>
+    <pre id="logs-content" style="font-size: 12px; margin: 0;">Loading logs...</pre>
+    <button onclick="refreshLogs()" class="btn btn-sm" style="margin-top: 10px;">🔄 Refresh Logs</button>
 </div>
 
 <div class="card">
@@ -45,4 +78,104 @@
     {% endif %}
 </div>
 {% endif %}
+
+<script>
+function dismissMessage(messageId) {
+    document.getElementById(messageId).style.display = 'none';
+}
+
+function toggleLogs() {
+    const panel = document.getElementById('logs-panel');
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        refreshLogs();
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+function refreshLogs() {
+    fetch('/api/logs/')
+        .then(response => response.json())
+        .then(data => {
+            const logsContent = document.getElementById('logs-content');
+            if (data.success) {
+                logsContent.textContent = data.logs.join('');
+                logsContent.scrollTop = logsContent.scrollHeight;
+            } else {
+                logsContent.textContent = 'Error loading logs: ' + data.error;
+            }
+        })
+        .catch(error => {
+            document.getElementById('logs-content').textContent = 'Error fetching logs: ' + error;
+        });
+}
+
+// Auto-hide success messages after 5 seconds
+setTimeout(function() {
+    const successMessages = document.querySelectorAll('.alert-success');
+    successMessages.forEach(function(msg) {
+        msg.style.transition = 'opacity 0.5s';
+        msg.style.opacity = '0';
+        setTimeout(() => msg.style.display = 'none', 500);
+    });
+}, 5000);
+
+// Add loading state to sync button
+document.addEventListener('DOMContentLoaded', function() {
+    const syncBtn = document.getElementById('sync-btn');
+    if (syncBtn) {
+        syncBtn.addEventListener('click', function() {
+            this.innerHTML = '⏳ Syncing...';
+            this.style.pointerEvents = 'none';
+        });
+    }
+});
+
+// Confirm disconnect function
+function confirmDisconnect() {
+    if (confirm('⚠️ Are you sure you want to disconnect your Gmail account?\n\nThis will delete all synced emails and you\'ll need to reconnect to access Gmail again.')) {
+        window.location.href = "{% url 'disconnect_gmail' %}";
+    }
+}
+</script>
+
+<style>
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-error, .alert-oauth_expired, .alert-quota_exceeded, 
+.alert-permission_error, .alert-api_error, .alert-unexpected_error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.alert-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+}
+</style>
 {% endblock %}

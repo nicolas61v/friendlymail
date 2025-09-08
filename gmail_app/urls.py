@@ -9,4 +9,7 @@ urlpatterns = [
     path('gmail/callback/', views.gmail_callback, name='gmail_callback'),
     path('sync-emails/', views.sync_emails, name='sync_emails'),
     path('email/<int:email_id>/', views.email_detail, name='email_detail'),
+    path('api/logs/', views.system_logs, name='system_logs'),
+    path('disconnect-gmail/', views.disconnect_gmail, name='disconnect_gmail'),
+    path('clear-oauth-session/', views.clear_oauth_session, name='clear_oauth_session'),
 ]
