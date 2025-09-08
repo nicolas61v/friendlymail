@@ -5,7 +5,7 @@
 {% if messages %}
     {% for message in messages %}
         <div class="alert alert-{{ message.tags|default:'info' }}" id="message-{{ forloop.counter }}">
-            {{ message }}
+            {{ message|safe }}
             {% if 'oauth_expired' in message.tags %}
                 <br><a href="{% url 'connect_gmail' %}" class="btn btn-primary btn-sm mt-2">Reconnect Gmail</a>
             {% endif %}
@@ -24,10 +24,12 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2>📧 Your Gmail: {{ gmail_account.email }}</h2>
-        <div>
+        <div class="dashboard-actions">
             <a href="{% url 'sync_emails' %}" class="btn" id="sync-btn">🔄 Sync Emails</a>
-            <button onclick="toggleLogs()" class="btn btn-secondary" style="margin-left: 10px;">📋 System Logs</button>
-            <button onclick="confirmDisconnect()" class="btn btn-danger" style="margin-left: 10px;">🔌 Disconnect</button>
+            <a href="{% url 'ai_config' %}" class="btn btn-ai">🤖 AI Config</a>
+            <a href="{% url 'ai_responses' %}" class="btn btn-ai">📤 AI Responses</a>
+            <button onclick="toggleLogs()" class="btn btn-secondary">📋 System Logs</button>
+            <button onclick="confirmDisconnect()" class="btn btn-danger">🔌 Disconnect</button>
         </div>
     </div>
     
@@ -176,6 +178,31 @@ function confirmDisconnect() {
     background-color: #dc3545;
     color: white;
     border: 1px solid #dc3545;
+}
+
+.btn-ai {
+    background-color: #9c27b0;
+    color: white;
+    border: 1px solid #9c27b0;
+}
+
+.dashboard-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .dashboard-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .dashboard-actions .btn {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
 }
 </style>
 {% endblock %}

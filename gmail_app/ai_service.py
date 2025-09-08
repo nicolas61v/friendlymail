@@ -128,50 +128,22 @@ class AIEmailAnalyzer:
     def _build_system_prompt(self, ai_context: AIContext) -> str:
         """Build system prompt for intent analysis"""
         
-        prompt = f"""You are an AI assistant that analyzes emails to determine if they should be automatically responded to or escalated to a human.
+        prompt = f"""You are an AI that analyzes emails for a professor.
 
-CONTEXT ABOUT THE RECIPIENT:
+PROFESSOR CONTEXT:
 Role: {ai_context.role}
 Description: {ai_context.context_description}
 
-TOPICS I CAN RESPOND TO:
-{ai_context.can_respond_topics or "General inquiries related to my role"}
+ANALYZE each email and return ONLY valid JSON:
 
-TOPICS I CANNOT RESPOND TO (MUST ESCALATE):
-{ai_context.cannot_respond_topics or "Personal matters, confidential information, complex decisions"}
+For questions about exams, schedules, assignments - decision should be "respond"
+For personal matters, grades, complex issues - decision should be "escalate"
 
-EMAIL DOMAINS I PROCESS:
-{ai_context.allowed_domains or "All domains"}
+EXAMPLE OUTPUT:
+{{"intent_type": "exam_info", "confidence": 0.9, "decision": "respond", "reason": "Student asking about exam date"}}
 
-Your task is to analyze each email and determine:
-1. What is the intent/topic of the email?
-2. Does this fall within topics I can respond to?
-3. Should I respond automatically or escalate to human?
-
-INTENT TYPES:
-- academic_question: Questions about coursework, concepts, assignments
-- schedule_inquiry: Questions about schedules, times, locations  
-- exam_info: Questions about exams, tests, evaluations
-- assignment_info: Questions about homework, projects, deadlines
-- technical_support: Technical help requests
-- personal_matter: Personal issues, family matters, health
-- administrative: Official processes, paperwork, policies
-- emergency: Urgent situations requiring immediate attention
-- spam: Promotional content, irrelevant messages
-- unclear: Cannot determine clear intent
-
-DECISION TYPES:
-- respond: AI should generate an automatic response
-- escalate: Forward to human for personal attention
-- ignore: Mark as spam/irrelevant
-
-Respond in JSON format:
-{
-    "intent_type": "one_of_the_types_above",
-    "confidence": 0.0-1.0,
-    "decision": "respond/escalate/ignore", 
-    "reason": "Brief explanation of your decision"
-}"""
+INTENT OPTIONS: exam_info, schedule_inquiry, academic_question, personal_matter, administrative, unclear
+DECISION OPTIONS: respond, escalate, ignore"""
         
         return prompt
     

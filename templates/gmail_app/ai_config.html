@@ -1,0 +1,478 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Navigation Tabs -->
+<div class="tabs-container">
+    <div class="tabs">
+        <button class="tab-button active" onclick="switchTab('context')">🤖 AI Context</button>
+        <button class="tab-button" onclick="switchTab('rules')">⏰ Temporal Rules</button>
+    </div>
+</div>
+
+<!-- AI Context Tab -->
+<div id="context-tab" class="tab-content active">
+    <div class="card">
+        <h2>🤖 Configure Your AI Assistant</h2>
+        <p>Set up your AI context so it can respond intelligently to emails on your behalf.</p>
+        
+        <form method="post" action="{% url 'ai_context_save' %}">
+            {% csrf_token %}
+            
+            <!-- Basic Information -->
+            <div class="form-section">
+                <h3>📝 Basic Information</h3>
+                
+                <div class="form-group">
+                    <label for="role">Your Role/Title</label>
+                    <input type="text" id="role" name="role" 
+                           value="{{ ai_context.role|default:'' }}" 
+                           placeholder="e.g., Professor at EAFIT, Tech Support Manager" 
+                           required>
+                    <small>How should the AI introduce itself when responding?</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="context_description">Context Description</label>
+                    <textarea id="context_description" name="context_description" rows="4" 
+                              placeholder="Describe your role, what you do, and relevant information for email responses"
+                              required>{{ ai_context.context_description|default:'' }}</textarea>
+                    <small>This helps the AI understand your work context</small>
+                </div>
+            </div>
+            
+            <!-- Complexity Level -->
+            <div class="form-section">
+                <h3>⚙️ Configuration Level</h3>
+                
+                <div class="form-group">
+                    <label for="complexity_level">Configuration Level</label>
+                    <select id="complexity_level" name="complexity_level" onchange="toggleComplexityFields()">
+                        <option value="simple" {% if ai_context.complexity_level == 'simple' %}selected{% endif %}>
+                            🟢 Simple - Basic context only
+                        </option>
+                        <option value="medium" {% if ai_context.complexity_level == 'medium' %}selected{% endif %}>
+                            🟡 Medium - Context + filters + keywords  
+                        </option>
+                        <option value="advanced" {% if ai_context.complexity_level == 'advanced' %}selected{% endif %}>
+                            🔴 Advanced - Full customization
+                        </option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Advanced Fields (Hidden by default) -->
+            <div id="advanced-fields" class="form-section" style="display: none;">
+                <h3>🎯 Advanced Configuration</h3>
+                
+                <div class="form-group">
+                    <label for="can_respond_topics">Topics AI CAN Respond To</label>
+                    <textarea id="can_respond_topics" name="can_respond_topics" rows="4" 
+                              placeholder="One topic per line, e.g.:&#10;Exam dates and information&#10;Class schedules and locations&#10;Assignment deadlines&#10;Course concepts and materials">{{ ai_context.can_respond_topics|default:'' }}</textarea>
+                    <small>List topics the AI should automatically respond to</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cannot_respond_topics">Topics AI CANNOT Respond To (Escalate)</label>
+                    <textarea id="cannot_respond_topics" name="cannot_respond_topics" rows="4" 
+                              placeholder="One topic per line, e.g.:&#10;Individual grades or scores&#10;Personal medical issues&#10;Disciplinary matters&#10;Emergency situations">{{ ai_context.cannot_respond_topics|default:'' }}</textarea>
+                    <small>List topics that require your personal attention</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="allowed_domains">Allowed Email Domains</label>
+                    <textarea id="allowed_domains" name="allowed_domains" rows="3" 
+                              placeholder="One domain per line, e.g.:&#10;@eafit.edu.co&#10;@company.com&#10;@university.edu">{{ ai_context.allowed_domains|default:'' }}</textarea>
+                    <small>Only process emails from these domains (leave empty for all domains)</small>
+                </div>
+            </div>
+            
+            <!-- Settings -->
+            <div class="form-section">
+                <h3>⚡ Settings</h3>
+                
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" name="is_active" {% if ai_context.is_active %}checked{% endif %}>
+                        <span class="checkmark"></span>
+                        AI Assistant is Active
+                    </label>
+                    <small>Turn AI processing on/off</small>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" name="auto_send" {% if ai_context.auto_send %}checked{% endif %}>
+                        <span class="checkmark"></span>
+                        Auto-send Responses (No Manual Approval)
+                    </label>
+                    <small>⚠️ If unchecked, you'll approve each response before sending</small>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    💾 {{ ai_context|yesno:"Update,Create" }} AI Configuration
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Temporal Rules Tab -->
+<div id="rules-tab" class="tab-content">
+    <div class="card">
+        <div class="card-header">
+            <h2>⏰ Temporal Rules</h2>
+            <button class="btn btn-secondary" onclick="showNewRuleForm()">➕ Add New Rule</button>
+        </div>
+        
+        {% if not has_ai_config %}
+            <div class="alert alert-warning">
+                ⚠️ Please configure your AI context first before creating temporal rules.
+            </div>
+        {% else %}
+            <!-- New Rule Form (Initially Hidden) -->
+            <div id="new-rule-form" class="form-container" style="display: none;">
+                <h3>📝 Create New Temporal Rule</h3>
+                <form method="post" action="{% url 'temporal_rule_save' %}">
+                    {% csrf_token %}
+                    <div class="rule-form-grid">
+                        <div class="form-group">
+                            <label for="name">Rule Name</label>
+                            <input type="text" id="name" name="name" placeholder="e.g., Midterm Exam Info" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="priority">Priority</label>
+                            <input type="number" id="priority" name="priority" value="1" min="1" max="10">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="start_date">Start Date</label>
+                            <input type="datetime-local" id="start_date" name="start_date" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="end_date">End Date</label>
+                            <input type="datetime-local" id="end_date" name="end_date" required>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" rows="2" 
+                                      placeholder="Brief description of this rule"></textarea>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="keywords">Keywords (comma-separated)</label>
+                            <input type="text" id="keywords" name="keywords" 
+                                   placeholder="exam, midterm, test, fecha" required>
+                            <small>Keywords that trigger this rule</small>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="response_template">Response Template</label>
+                            <textarea id="response_template" name="response_template" rows="4" 
+                                      placeholder="The midterm exam will be on [date] at [time] in [location]. Please bring your student ID and calculator."
+                                      required></textarea>
+                            <small>Template response for matching emails</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select id="status" name="status">
+                                <option value="draft">📝 Draft</option>
+                                <option value="active">✅ Active</option>
+                                <option value="scheduled">⏳ Scheduled</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">💾 Save Rule</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideNewRuleForm()">❌ Cancel</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Existing Rules List -->
+            <div class="rules-list">
+                {% if temporal_rules %}
+                    {% for rule in temporal_rules %}
+                        <div class="rule-card">
+                            <div class="rule-header">
+                                <h4>{{ rule.name }}</h4>
+                                <div class="rule-status status-{{ rule.status }}">{{ rule.get_status_display }}</div>
+                            </div>
+                            
+                            <div class="rule-details">
+                                <p><strong>📅 Period:</strong> {{ rule.start_date|date:"M d, Y H:i" }} → {{ rule.end_date|date:"M d, Y H:i" }}</p>
+                                <p><strong>🔑 Keywords:</strong> {{ rule.keywords }}</p>
+                                <p><strong>📝 Response:</strong> {{ rule.response_template|truncatechars:100 }}</p>
+                            </div>
+                            
+                            <div class="rule-actions">
+                                <button class="btn btn-sm btn-edit" onclick="editRule({{ rule.id }})">✏️ Edit</button>
+                                <a href="{% url 'temporal_rule_delete' rule.id %}" 
+                                   class="btn btn-sm btn-danger" 
+                                   onclick="return confirm('Delete rule {{ rule.name }}?')">🗑️ Delete</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>📝 No Temporal Rules Yet</h3>
+                        <p>Create your first temporal rule to start automating responses for specific time periods.</p>
+                        <button class="btn btn-primary" onclick="showNewRuleForm()">➕ Create First Rule</button>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active from all buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').classList.add('active');
+    event.target.classList.add('active');
+}
+
+function toggleComplexityFields() {
+    const level = document.getElementById('complexity_level').value;
+    const advancedFields = document.getElementById('advanced-fields');
+    
+    if (level === 'advanced' || level === 'medium') {
+        advancedFields.style.display = 'block';
+    } else {
+        advancedFields.style.display = 'none';
+    }
+}
+
+function showNewRuleForm() {
+    document.getElementById('new-rule-form').style.display = 'block';
+}
+
+function hideNewRuleForm() {
+    document.getElementById('new-rule-form').style.display = 'none';
+}
+
+// Initialize complexity fields visibility
+document.addEventListener('DOMContentLoaded', function() {
+    toggleComplexityFields();
+});
+</script>
+
+<style>
+.tabs-container {
+    margin-bottom: 20px;
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 16px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+}
+
+.tab-button:hover {
+    background-color: #f5f5f5;
+}
+
+.tab-button.active {
+    color: #1a73e8;
+    border-bottom-color: #1a73e8;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section h3 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group small {
+    color: #666;
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 10px;
+}
+
+.form-actions {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.rule-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.rule-form-grid .full-width {
+    grid-column: 1 / -1;
+}
+
+.rules-list {
+    margin-top: 20px;
+}
+
+.rule-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.rule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.rule-header h4 {
+    margin: 0;
+    color: #333;
+}
+
+.rule-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-draft {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-scheduled {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.rule-details {
+    margin-bottom: 15px;
+}
+
+.rule-details p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.rule-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.btn-edit {
+    background-color: #007bff;
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.empty-state h3 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.form-container {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+</style>
+{% endblock %}

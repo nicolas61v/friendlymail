@@ -265,3 +265,46 @@ class GmailService:
                 synced_emails.append(email)
         
         return synced_emails
+    
+    def send_email(self, to_email: str, subject: str, body: str, reply_to_message_id: str = None):
+        """Send email via Gmail API"""
+        service = self.get_service()
+        if not service:
+            raise OAuthError("Unable to connect to Gmail service for sending")
+        
+        logger.info(f"Sending email to {to_email} with subject: {subject[:50]}")
+        
+        try:
+            # Create message
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+            import base64
+            
+            message = MIMEMultipart()
+            message['to'] = to_email
+            message['subject'] = subject
+            
+            # Add reply headers if replying to a message
+            if reply_to_message_id:
+                message['In-Reply-To'] = reply_to_message_id
+                message['References'] = reply_to_message_id
+            
+            # Add body
+            msg_body = MIMEText(body, 'plain', 'utf-8')
+            message.attach(msg_body)
+            
+            # Encode message
+            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+            
+            # Send message
+            sent_message = service.users().messages().send(
+                userId='me',
+                body={'raw': raw_message}
+            ).execute()
+            
+            logger.info(f"Email sent successfully. Message ID: {sent_message['id']}")
+            return sent_message['id']
+            
+        except Exception as e:
+            logger.error(f"Error sending email to {to_email}: {e}")
+            raise GmailAPIError(f"Failed to send email: {str(e)}")

@@ -135,6 +135,7 @@ GMAIL_SCOPES = [
     'openid',  # Required for OAuth2
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/gmail.modify',  # Needed for better token management
+    'https://www.googleapis.com/auth/gmail.send',  # Send emails
     'https://www.googleapis.com/auth/userinfo.email'  # Get user email reliably
 ]
 
