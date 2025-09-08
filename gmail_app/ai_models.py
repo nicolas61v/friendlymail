@@ -1,0 +1,200 @@
+"""
+AI-powered email assistant models
+"""
+from django.db import models
+from django.contrib.auth.models import User
+from .models import Email
+
+
+class AIContext(models.Model):
+    """User's AI context configuration"""
+    
+    COMPLEXITY_CHOICES = [
+        ('simple', 'Simple - Basic context only'),
+        ('medium', 'Medium - Context + filters + keywords'),
+        ('advanced', 'Advanced - Full customization')
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    
+    # Basic Info
+    role = models.CharField(max_length=100, help_text="e.g., 'Professor at EAFIT', 'Tech Support Manager'")
+    context_description = models.TextField(help_text="Describe your role and what you do")
+    
+    # Complexity level
+    complexity_level = models.CharField(max_length=20, choices=COMPLEXITY_CHOICES, default='simple')
+    
+    # What AI CAN respond to
+    can_respond_topics = models.TextField(
+        help_text="Topics/questions AI can answer (one per line)",
+        blank=True
+    )
+    
+    # What AI should NOT respond to  
+    cannot_respond_topics = models.TextField(
+        help_text="Topics AI should escalate to you (one per line)",
+        blank=True
+    )
+    
+    # Email filters
+    allowed_domains = models.TextField(
+        help_text="Email domains to process (e.g., @eafit.edu.co, @company.com)",
+        blank=True
+    )
+    
+    # General settings
+    is_active = models.BooleanField(default=True)
+    auto_send = models.BooleanField(default=False, help_text="Auto-send responses or require approval")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.role}"
+
+
+class TemporalRule(models.Model):
+    """Time-based rules for specific responses"""
+    
+    RULE_STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('active', 'Active'), 
+        ('scheduled', 'Scheduled'),
+        ('expired', 'Expired'),
+        ('disabled', 'Disabled')
+    ]
+    
+    ai_context = models.ForeignKey(AIContext, on_delete=models.CASCADE, related_name='temporal_rules')
+    
+    # Rule identification
+    name = models.CharField(max_length=200, help_text="e.g., 'Midterm Exam Info'")
+    description = models.TextField(blank=True)
+    
+    # Time constraints
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    
+    # Triggers
+    keywords = models.TextField(help_text="Keywords that trigger this rule (comma-separated)")
+    email_filters = models.TextField(blank=True, help_text="Additional email filters (optional)")
+    
+    # Response
+    response_template = models.TextField(help_text="Template response for matching emails")
+    
+    # Settings
+    status = models.CharField(max_length=20, choices=RULE_STATUS_CHOICES, default='draft')
+    priority = models.IntegerField(default=1, help_text="Higher number = higher priority")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-priority', '-created_at']
+    
+    def __str__(self):
+        return f"{self.name} ({self.start_date.date()} - {self.end_date.date()})"
+
+
+class EmailIntent(models.Model):
+    """AI-determined intent of each email"""
+    
+    INTENT_TYPES = [
+        ('academic_question', 'Academic Question'),
+        ('schedule_inquiry', 'Schedule Inquiry'), 
+        ('exam_info', 'Exam Information'),
+        ('assignment_info', 'Assignment Information'),
+        ('technical_support', 'Technical Support'),
+        ('personal_matter', 'Personal Matter'),
+        ('administrative', 'Administrative'),
+        ('emergency', 'Emergency'),
+        ('spam', 'Spam'),
+        ('unclear', 'Unclear Intent')
+    ]
+    
+    DECISION_TYPES = [
+        ('respond', 'AI Should Respond'),
+        ('escalate', 'Escalate to Human'),
+        ('ignore', 'Ignore (Spam)')
+    ]
+    
+    email = models.OneToOneField(Email, on_delete=models.CASCADE)
+    
+    # AI Analysis
+    intent_type = models.CharField(max_length=50, choices=INTENT_TYPES)
+    confidence_score = models.FloatField(help_text="AI confidence (0.0 - 1.0)")
+    
+    # Decision
+    ai_decision = models.CharField(max_length=20, choices=DECISION_TYPES)
+    decision_reason = models.TextField(help_text="Why AI made this decision")
+    
+    # Matching rule (if any)
+    matched_rule = models.ForeignKey(TemporalRule, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # AI processing
+    processed_at = models.DateTimeField(auto_now_add=True)
+    processing_time_ms = models.IntegerField(help_text="Time taken for AI analysis")
+    
+    def __str__(self):
+        return f"{self.email.subject[:50]} - {self.intent_type} ({self.ai_decision})"
+
+
+class AIResponse(models.Model):
+    """AI-generated responses"""
+    
+    RESPONSE_STATUS = [
+        ('generated', 'Generated by AI'),
+        ('pending_approval', 'Pending User Approval'),
+        ('approved', 'Approved by User'),
+        ('rejected', 'Rejected by User'),
+        ('sent', 'Sent to Recipient'),
+        ('failed', 'Failed to Send')
+    ]
+    
+    email_intent = models.OneToOneField(EmailIntent, on_delete=models.CASCADE)
+    
+    # Response content
+    response_text = models.TextField()
+    response_subject = models.CharField(max_length=200, help_text="Subject line for response")
+    
+    # Metadata
+    status = models.CharField(max_length=20, choices=RESPONSE_STATUS, default='generated')
+    generated_at = models.DateTimeField(auto_now_add=True)
+    
+    # User actions
+    approved_at = models.DateTimeField(null=True, blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    
+    # Feedback
+    user_feedback = models.TextField(blank=True, help_text="User feedback on AI response quality")
+    
+    def __str__(self):
+        return f"Response to: {self.email_intent.email.subject[:30]} - {self.status}"
+
+
+class AIStats(models.Model):
+    """Statistics for AI performance"""
+    
+    ai_context = models.ForeignKey(AIContext, on_delete=models.CASCADE, related_name='stats')
+    
+    # Period
+    date = models.DateField()
+    
+    # Counts
+    emails_processed = models.IntegerField(default=0)
+    responses_generated = models.IntegerField(default=0)
+    responses_sent = models.IntegerField(default=0)
+    escalations = models.IntegerField(default=0)
+    
+    # Performance
+    avg_confidence = models.FloatField(default=0.0)
+    avg_processing_time_ms = models.IntegerField(default=0)
+    
+    # User satisfaction
+    user_approvals = models.IntegerField(default=0)
+    user_rejections = models.IntegerField(default=0)
+    
+    class Meta:
+        unique_together = ['ai_context', 'date']
+    
+    def __str__(self):
+        return f"{self.ai_context.user.username} - {self.date} - {self.emails_processed} emails"
