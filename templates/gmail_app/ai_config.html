@@ -214,7 +214,17 @@
             <div class="rules-list">
                 {% if temporal_rules %}
                     {% for rule in temporal_rules %}
-                        <div class="rule-card">
+                        <div class="rule-card" 
+                             data-rule-id="{{ rule.id }}"
+                             data-rule-name="{{ rule.name }}"
+                             data-rule-description="{{ rule.description|default:'' }}"
+                             data-rule-start-date="{{ rule.start_date|date:'Y-m-d\TH:i' }}"
+                             data-rule-end-date="{{ rule.end_date|date:'Y-m-d\TH:i' }}"
+                             data-rule-keywords="{{ rule.keywords }}"
+                             data-rule-email-filters="{{ rule.email_filters|default:'' }}"
+                             data-rule-response-template="{{ rule.response_template }}"
+                             data-rule-status="{{ rule.status }}"
+                             data-rule-priority="{{ rule.priority }}">
                             <div class="rule-header">
                                 <h4>{{ rule.name }}</h4>
                                 <div class="rule-status status-{{ rule.status }}">{{ rule.get_status_display }}</div>
@@ -288,6 +298,55 @@ function showNewRuleForm() {
 
 function hideNewRuleForm() {
     document.getElementById('new-rule-form').style.display = 'none';
+    // Clear form when hiding
+    document.querySelector('#new-rule-form form').reset();
+    document.querySelector('#new-rule-form h3').innerHTML = '<i class="fas fa-plus-circle text-primary me-2"></i>Create New Temporal Rule';
+    // Remove rule_id if exists
+    const ruleIdInput = document.getElementById('rule_id');
+    if (ruleIdInput) {
+        ruleIdInput.remove();
+    }
+}
+
+function editRule(ruleId) {
+    // Find the rule card with all the data
+    const ruleCard = document.querySelector(`[data-rule-id="${ruleId}"]`);
+    if (!ruleCard) {
+        alert('Error: Rule not found');
+        return;
+    }
+    
+    // Show form
+    showNewRuleForm();
+    
+    // Change title to Edit
+    document.querySelector('#new-rule-form h3').innerHTML = '<i class="fas fa-edit text-primary me-2"></i>Edit Temporal Rule';
+    
+    // Add hidden rule_id field for editing
+    const form = document.querySelector('#new-rule-form form');
+    let ruleIdInput = document.getElementById('rule_id');
+    if (!ruleIdInput) {
+        ruleIdInput = document.createElement('input');
+        ruleIdInput.type = 'hidden';
+        ruleIdInput.name = 'rule_id';
+        ruleIdInput.id = 'rule_id';
+        form.appendChild(ruleIdInput);
+    }
+    ruleIdInput.value = ruleId;
+    
+    // Fill form with all rule data from data attributes
+    document.getElementById('name').value = ruleCard.dataset.ruleName || '';
+    document.getElementById('description').value = ruleCard.dataset.ruleDescription || '';
+    document.getElementById('start_date').value = ruleCard.dataset.ruleStartDate || '';
+    document.getElementById('end_date').value = ruleCard.dataset.ruleEndDate || '';
+    document.getElementById('keywords').value = ruleCard.dataset.ruleKeywords || '';
+    document.getElementById('email_filters').value = ruleCard.dataset.ruleEmailFilters || '';
+    document.getElementById('response_template').value = ruleCard.dataset.ruleResponseTemplate || '';
+    document.getElementById('status').value = ruleCard.dataset.ruleStatus || 'draft';
+    document.getElementById('priority').value = ruleCard.dataset.rulePriority || '1';
+    
+    // Scroll to form
+    document.getElementById('new-rule-form').scrollIntoView({ behavior: 'smooth' });
 }
 
 // Initialize complexity fields visibility
