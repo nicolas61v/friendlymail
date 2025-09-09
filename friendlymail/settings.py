@@ -105,7 +105,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# Set timezone to Colombia (UTC-5)
+TIME_ZONE = 'America/Bogota'
 
 USE_I18N = True
 

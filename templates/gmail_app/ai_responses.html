@@ -31,22 +31,22 @@
         <div class="stat-card">
             <h3>{{ pending_responses|length }}</h3>
             <p>Pending Approval</p>
-            <i class="fas fa-clock text-warning stat-icon"></i>
+            <i class="fas fa-clock text-dark stat-icon"></i>
         </div>
         <div class="stat-card">
             <h3>{{ recent_responses|length }}</h3>
             <p>Recent Responses</p>
-            <i class="fas fa-paper-plane text-info stat-icon"></i>
+            <i class="fas fa-paper-plane text-dark stat-icon"></i>
         </div>
         <div class="stat-card">
             <h3>{{ email_intents|length }}</h3>
             <p>Emails Analyzed</p>
-            <i class="fas fa-brain text-purple stat-icon"></i>
+            <i class="fas fa-brain text-dark stat-icon"></i>
         </div>
         <div class="stat-card">
             <h3>{% if ai_context.auto_send %}Auto{% else %}Manual{% endif %}</h3>
             <p>Send Mode</p>
-            <i class="fas {% if ai_context.auto_send %}fa-bolt text-success{% else %}fa-user text-secondary{% endif %} stat-icon"></i>
+            <i class="fas {% if ai_context.auto_send %}fa-bolt text-dark{% else %}fa-user text-dark{% endif %} stat-icon"></i>
         </div>
     </div>
 
@@ -359,7 +359,7 @@ function debugAI() {
     top: 15px;
     right: 15px;
     font-size: 24px;
-    opacity: 0.3;
+    opacity: 0.6;
 }
 
 .text-purple {
