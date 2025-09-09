@@ -2,40 +2,62 @@
 
 {% block content %}
 <div class="card">
-    <div style="margin-bottom: 1rem;">
-        <a href="{% url 'dashboard' %}" class="btn" style="background: #6c757d;">← Back to Dashboard</a>
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h1 class="card-title mb-0">
+            <i class="fas fa-envelope text-primary me-2"></i>{{ email.subject|default:"(No Subject)" }}
+        </h1>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
     </div>
     
-    <div style="border-bottom: 2px solid #eee; padding-bottom: 1rem; margin-bottom: 1rem;">
-        <h2>{{ email.subject|default:"(No Subject)" }}</h2>
-        <div class="email-meta" style="font-size: 1em; margin-top: 10px;">
-            <p><strong>From:</strong> {{ email.sender }}</p>
-            <p><strong>To:</strong> {{ email.recipient }}</p>
-            <p><strong>Date:</strong> {{ email.received_date|date:"F d, Y H:i" }}</p>
-            <p><strong>Status:</strong> {% if email.is_read %}Read{% else %}<span style="color: #ea4335;">Unread</span>{% endif %}</p>
-        </div>
-    </div>
-    
-    <div class="email-body">
-        {% if email.body_html %}
-            <div style="border: 1px solid #eee; padding: 1rem; background: #fafafa;">
-                <h4>HTML Content:</h4>
-                <div style="background: white; padding: 1rem; margin-top: 10px;">
-                    {{ email.body_html|safe }}
+    <div class="card-body">
+        <div class="email-meta mb-4 p-3 bg-light rounded">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-2"><strong><i class="fas fa-user me-2"></i>From:</strong> {{ email.sender }}</p>
+                    <p class="mb-2"><strong><i class="fas fa-envelope me-2"></i>To:</strong> {{ email.recipient }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-2"><strong><i class="fas fa-calendar me-2"></i>Date:</strong> {{ email.received_date|date:"F d, Y H:i" }}</p>
+                    <p class="mb-0">
+                        <strong><i class="fas fa-info-circle me-2"></i>Status:</strong> 
+                        {% if email.is_read %}
+                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Read</span>
+                        {% else %}
+                            <span class="badge bg-primary"><i class="fas fa-circle me-1"></i>Unread</span>
+                        {% endif %}
+                    </p>
                 </div>
             </div>
-        {% endif %}
+        </div>
         
-        {% if email.body_plain %}
-            <div style="margin-top: 1rem;">
-                <h4>Plain Text:</h4>
-                <pre style="background: #f8f9fa; padding: 1rem; border: 1px solid #e9ecef; border-radius: 4px; white-space: pre-wrap; font-family: Arial, sans-serif;">{{ email.body_plain }}</pre>
-            </div>
-        {% endif %}
-        
-        {% if not email.body_plain and not email.body_html %}
-            <p style="color: #666; font-style: italic;">No content available for this email.</p>
-        {% endif %}
+        <div class="email-content">
+            {% if email.body_html %}
+                <div class="mb-4">
+                    <h4 class="mb-3"><i class="fas fa-code text-info me-2"></i>HTML Content</h4>
+                    <div class="border rounded p-3" style="background-color: #f8f9fa;">
+                        <div class="bg-white p-3 rounded shadow-sm">
+                            {{ email.body_html|safe }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if email.body_plain %}
+                <div class="mb-4">
+                    <h4 class="mb-3"><i class="fas fa-file-alt text-secondary me-2"></i>Plain Text</h4>
+                    <pre class="bg-light p-3 border rounded" style="white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 0.9rem;">{{ email.body_plain }}</pre>
+                </div>
+            {% endif %}
+            
+            {% if not email.body_plain and not email.body_html %}
+                <div class="text-center py-5">
+                    <i class="fas fa-exclamation-circle fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No content available for this email.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

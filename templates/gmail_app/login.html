@@ -1,19 +1,34 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="card login-form">
-    <h2 class="text-center mb-2">Simple Login</h2>
-    <p class="text-center mb-2">For demo purposes - just enter any username</p>
-    
-    <form method="post">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" value="testuser" required>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white text-center">
+                <i class="fas fa-sign-in-alt fa-2x mb-2"></i>
+                <h2 class="mb-0">Simple Login</h2>
+            </div>
+            <div class="card-body">
+                <p class="text-center text-muted mb-4">For demo purposes - just enter any username</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user me-2"></i>Username:
+                        </label>
+                        <input type="text" id="username" name="username" 
+                               class="form-control form-control-lg" 
+                               value="testuser" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div class="form-group text-center">
-            <button type="submit" class="btn">Login</button>
-        </div>
-    </form>
+    </div>
 </div>
 {% endblock %}

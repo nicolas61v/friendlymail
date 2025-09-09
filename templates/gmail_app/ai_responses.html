@@ -3,21 +3,26 @@
 {% block content %}
 {% if not has_ai_config %}
     <div class="card text-center">
-        <h2>🤖 Configure AI Assistant First</h2>
-        <p>You need to set up your AI context before managing responses.</p>
-        <a href="{% url 'ai_config' %}" class="btn btn-primary">🔧 Configure AI Assistant</a>
+        <div class="card-body py-5">
+            <i class="fas fa-robot fa-4x text-primary mb-4"></i>
+            <h2 class="card-title">Configure AI Assistant First</h2>
+            <p class="card-text text-muted mb-4">You need to set up your AI context before managing responses.</p>
+            <a href="{% url 'ai_config' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-cog me-2"></i>Configure AI Assistant
+            </a>
+        </div>
     </div>
 {% else %}
     <!-- Quick Actions -->
     <div class="quick-actions">
         <a href="{% url 'process_existing_emails' %}" class="btn btn-primary">
-            🤖 Process Existing Emails with AI
+            <i class="fas fa-robot me-2"></i>Process Existing Emails with AI
         </a>
         <a href="{% url 'ai_config' %}" class="btn btn-secondary">
-            ⚙️ Configure AI
+            <i class="fas fa-cog me-2"></i>Configure AI
         </a>
         <button class="btn btn-warning" onclick="debugAI()">
-            🐛 Debug AI Status
+            <i class="fas fa-bug me-2"></i>Debug AI Status
         </button>
     </div>
 
@@ -26,30 +31,33 @@
         <div class="stat-card">
             <h3>{{ pending_responses|length }}</h3>
             <p>Pending Approval</p>
-            <span class="stat-icon">⏳</span>
+            <i class="fas fa-clock text-warning stat-icon"></i>
         </div>
         <div class="stat-card">
             <h3>{{ recent_responses|length }}</h3>
             <p>Recent Responses</p>
-            <span class="stat-icon">📤</span>
+            <i class="fas fa-paper-plane text-info stat-icon"></i>
         </div>
         <div class="stat-card">
             <h3>{{ email_intents|length }}</h3>
             <p>Emails Analyzed</p>
-            <span class="stat-icon">🧠</span>
+            <i class="fas fa-brain text-purple stat-icon"></i>
         </div>
         <div class="stat-card">
             <h3>{% if ai_context.auto_send %}Auto{% else %}Manual{% endif %}</h3>
             <p>Send Mode</p>
-            <span class="stat-icon">{% if ai_context.auto_send %}⚡{% else %}👤{% endif %}</span>
+            <i class="fas {% if ai_context.auto_send %}fa-bolt text-success{% else %}fa-user text-secondary{% endif %} stat-icon"></i>
         </div>
     </div>
 
     <!-- Pending Approvals -->
     {% if has_pending %}
         <div class="card">
-            <h2>⏳ Pending Approvals</h2>
-            <p>These AI-generated responses are waiting for your approval before sending.</p>
+            <div class="card-header bg-light">
+                <h2 class="mb-0"><i class="fas fa-clock text-warning me-2"></i>Pending Approvals</h2>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">These AI-generated responses are waiting for your approval before sending.</p>
             
             <div class="responses-grid">
                 {% for response in pending_responses %}
@@ -75,13 +83,13 @@
                         
                         <div class="response-actions">
                             <a href="{% url 'approve_response' response.id %}" class="btn btn-success">
-                                ✅ Approve & Send
+                                <i class="fas fa-check me-2"></i>Approve & Send
                             </a>
                             <button class="btn btn-danger" onclick="showRejectForm({{ response.id }})">
-                                ❌ Reject
+                                <i class="fas fa-times me-2"></i>Reject
                             </button>
                             <button class="btn btn-secondary" onclick="toggleOriginalEmail({{ response.id }})">
-                                👁️ View Original
+                                <i class="fas fa-eye me-2"></i>View Original
                             </button>
                         </div>
                         
@@ -112,15 +120,22 @@
     <!-- Recent Activity Tabs -->
     <div class="tabs-container">
         <div class="tabs">
-            <button class="tab-button active" onclick="switchTab('responses')">📤 Recent Responses</button>
-            <button class="tab-button" onclick="switchTab('analysis')">🧠 Email Analysis</button>
+            <button class="tab-button active" onclick="switchTab('responses')">
+                <i class="fas fa-paper-plane me-2"></i>Recent Responses
+            </button>
+            <button class="tab-button" onclick="switchTab('analysis')">
+                <i class="fas fa-brain me-2"></i>Email Analysis
+            </button>
         </div>
     </div>
     
     <!-- Recent Responses Tab -->
     <div id="responses-tab" class="tab-content active">
         <div class="card">
-            <h2>📤 Recent AI Responses</h2>
+            <div class="card-header bg-light">
+                <h2 class="mb-0"><i class="fas fa-paper-plane text-info me-2"></i>Recent AI Responses</h2>
+            </div>
+            <div class="card-body">
             
             {% if recent_responses %}
                 <div class="table-container">
@@ -144,10 +159,10 @@
                                     <td>{{ response.email_intent.email.sender|truncatechars:30 }}</td>
                                     <td>
                                         <span class="status-badge status-{{ response.status }}">
-                                            {% if response.status == 'sent' %}✅ Sent
-                                            {% elif response.status == 'approved' %}👍 Approved
-                                            {% elif response.status == 'rejected' %}❌ Rejected
-                                            {% elif response.status == 'pending_approval' %}⏳ Pending
+                                            {% if response.status == 'sent' %}<i class="fas fa-check me-1"></i>Sent
+                                            {% elif response.status == 'approved' %}<i class="fas fa-thumbs-up me-1"></i>Approved
+                                            {% elif response.status == 'rejected' %}<i class="fas fa-times me-1"></i>Rejected
+                                            {% elif response.status == 'pending_approval' %}<i class="fas fa-clock me-1"></i>Pending
                                             {% else %}{{ response.get_status_display }}
                                             {% endif %}
                                         </span>
@@ -155,7 +170,7 @@
                                     <td>{{ response.generated_at|timesince }} ago</td>
                                     <td>
                                         <button class="btn btn-sm btn-secondary" onclick="viewResponse({{ response.id }})">
-                                            👁️ View
+                                            <i class="fas fa-eye me-1"></i>View
                                         </button>
                                     </td>
                                 </tr>
@@ -165,7 +180,8 @@
                 </div>
             {% else %}
                 <div class="empty-state">
-                    <h3>📭 No Responses Yet</h3>
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h3>No Responses Yet</h3>
                     <p>AI responses will appear here once you start processing emails.</p>
                 </div>
             {% endif %}
@@ -175,7 +191,10 @@
     <!-- Email Analysis Tab -->
     <div id="analysis-tab" class="tab-content">
         <div class="card">
-            <h2>🧠 Email Analysis</h2>
+            <div class="card-header bg-light">
+                <h2 class="mb-0"><i class="fas fa-brain text-purple me-2"></i>Email Analysis</h2>
+            </div>
+            <div class="card-body">
             <p>See how AI is analyzing and categorizing your incoming emails.</p>
             
             {% if email_intents %}
@@ -192,9 +211,9 @@
                                 <p><strong>Intent:</strong> {{ intent.get_intent_type_display }}</p>
                                 <p><strong>Decision:</strong> 
                                     <span class="decision decision-{{ intent.ai_decision }}">
-                                        {% if intent.ai_decision == 'respond' %}🤖 AI Respond
-                                        {% elif intent.ai_decision == 'escalate' %}👤 Human Review  
-                                        {% else %}🚫 Ignore
+                                        {% if intent.ai_decision == 'respond' %}<i class="fas fa-robot me-1"></i>AI Respond
+                                        {% elif intent.ai_decision == 'escalate' %}<i class="fas fa-user me-1"></i>Human Review  
+                                        {% else %}<i class="fas fa-ban me-1"></i>Ignore
                                         {% endif %}
                                     </span>
                                 </p>
@@ -211,7 +230,8 @@
                 </div>
             {% else %}
                 <div class="empty-state">
-                    <h3>🔍 No Analysis Yet</h3>
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h3>No Analysis Yet</h3>
                     <p>Email analysis will appear here once you sync emails with AI processing enabled.</p>
                 </div>
             {% endif %}
@@ -258,7 +278,7 @@ function viewResponse(responseId) {
     
     // For now, show a simple alert with info
     // TODO: Implement proper modal with full response text
-    alert(`📧 Response Details:\n\nEmail: ${subject}\nFrom: ${sender}\nStatus: ${status}\n\nNote: Full response modal coming soon!`);
+    alert(`Response Details:\n\nEmail: ${subject}\nFrom: ${sender}\nStatus: ${status}\n\nNote: Full response modal coming soon!`);
 }
 
 function debugAI() {
@@ -267,7 +287,7 @@ function debugAI() {
         .then(data => {
             if (data.success) {
                 const info = data.debug_info;
-                let message = `🤖 AI Debug Info:\n\n`;
+                let message = `AI Debug Info:\n\n`;
                 
                 message += `AI Context: ${info.ai_context.exists ? 'EXISTS' : 'NOT FOUND'}\n`;
                 if (info.ai_context.exists) {
@@ -340,6 +360,10 @@ function debugAI() {
     right: 15px;
     font-size: 24px;
     opacity: 0.3;
+}
+
+.text-purple {
+    color: #9c27b0 !important;
 }
 
 .responses-grid {

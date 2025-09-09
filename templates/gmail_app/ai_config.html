@@ -4,15 +4,22 @@
 <!-- Navigation Tabs -->
 <div class="tabs-container">
     <div class="tabs">
-        <button class="tab-button active" onclick="switchTab('context')">🤖 AI Context</button>
-        <button class="tab-button" onclick="switchTab('rules')">⏰ Temporal Rules</button>
+        <button class="tab-button active" onclick="switchTab('context')">
+            <i class="fas fa-robot me-2"></i>AI Context
+        </button>
+        <button class="tab-button" onclick="switchTab('rules')">
+            <i class="fas fa-clock me-2"></i>Temporal Rules
+        </button>
     </div>
 </div>
 
 <!-- AI Context Tab -->
 <div id="context-tab" class="tab-content active">
     <div class="card">
-        <h2>🤖 Configure Your AI Assistant</h2>
+        <div class="card-header bg-light">
+            <h2 class="mb-0"><i class="fas fa-robot text-primary me-2"></i>Configure Your AI Assistant</h2>
+        </div>
+        <div class="card-body">
         <p>Set up your AI context so it can respond intelligently to emails on your behalf.</p>
         
         <form method="post" action="{% url 'ai_context_save' %}">
@@ -20,7 +27,7 @@
             
             <!-- Basic Information -->
             <div class="form-section">
-                <h3>📝 Basic Information</h3>
+                <h3><i class="fas fa-edit text-primary me-2"></i>Basic Information</h3>
                 
                 <div class="form-group">
                     <label for="role">Your Role/Title</label>
@@ -42,19 +49,19 @@
             
             <!-- Complexity Level -->
             <div class="form-section">
-                <h3>⚙️ Configuration Level</h3>
+                <h3><i class="fas fa-cog text-secondary me-2"></i>Configuration Level</h3>
                 
                 <div class="form-group">
                     <label for="complexity_level">Configuration Level</label>
                     <select id="complexity_level" name="complexity_level" onchange="toggleComplexityFields()">
                         <option value="simple" {% if ai_context.complexity_level == 'simple' %}selected{% endif %}>
-                            🟢 Simple - Basic context only
+                            <i class="fas fa-circle text-success me-2"></i>Simple - Basic context only
                         </option>
                         <option value="medium" {% if ai_context.complexity_level == 'medium' %}selected{% endif %}>
-                            🟡 Medium - Context + filters + keywords  
+                            <i class="fas fa-circle text-warning me-2"></i>Medium - Context + filters + keywords  
                         </option>
                         <option value="advanced" {% if ai_context.complexity_level == 'advanced' %}selected{% endif %}>
-                            🔴 Advanced - Full customization
+                            <i class="fas fa-circle text-danger me-2"></i>Advanced - Full customization
                         </option>
                     </select>
                 </div>
@@ -62,7 +69,7 @@
             
             <!-- Advanced Fields (Hidden by default) -->
             <div id="advanced-fields" class="form-section" style="display: none;">
-                <h3>🎯 Advanced Configuration</h3>
+                <h3><i class="fas fa-bullseye text-info me-2"></i>Advanced Configuration</h3>
                 
                 <div class="form-group">
                     <label for="can_respond_topics">Topics AI CAN Respond To</label>
@@ -88,7 +95,7 @@
             
             <!-- Settings -->
             <div class="form-section">
-                <h3>⚡ Settings</h3>
+                <h3><i class="fas fa-bolt text-warning me-2"></i>Settings</h3>
                 
                 <div class="form-group checkbox-group">
                     <label>
@@ -105,13 +112,13 @@
                         <span class="checkmark"></span>
                         Auto-send Responses (No Manual Approval)
                     </label>
-                    <small>⚠️ If unchecked, you'll approve each response before sending</small>
+                    <small><i class="fas fa-exclamation-triangle text-warning me-1"></i>If unchecked, you'll approve each response before sending</small>
                 </div>
             </div>
             
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">
-                    💾 {{ ai_context|yesno:"Update,Create" }} AI Configuration
+                    <i class="fas fa-save me-2"></i>{{ ai_context|yesno:"Update,Create" }} AI Configuration
                 </button>
             </div>
         </form>
@@ -122,18 +129,20 @@
 <div id="rules-tab" class="tab-content">
     <div class="card">
         <div class="card-header">
-            <h2>⏰ Temporal Rules</h2>
-            <button class="btn btn-secondary" onclick="showNewRuleForm()">➕ Add New Rule</button>
+            <h2><i class="fas fa-clock text-info me-2"></i>Temporal Rules</h2>
+            <button class="btn btn-secondary" onclick="showNewRuleForm()">
+                <i class="fas fa-plus me-2"></i>Add New Rule
+            </button>
         </div>
         
         {% if not has_ai_config %}
             <div class="alert alert-warning">
-                ⚠️ Please configure your AI context first before creating temporal rules.
+                <i class="fas fa-exclamation-triangle me-2"></i>Please configure your AI context first before creating temporal rules.
             </div>
         {% else %}
             <!-- New Rule Form (Initially Hidden) -->
             <div id="new-rule-form" class="form-container" style="display: none;">
-                <h3>📝 Create New Temporal Rule</h3>
+                <h3><i class="fas fa-plus-circle text-primary me-2"></i>Create New Temporal Rule</h3>
                 <form method="post" action="{% url 'temporal_rule_save' %}">
                     {% csrf_token %}
                     <div class="rule-form-grid">
@@ -181,16 +190,20 @@
                         <div class="form-group">
                             <label for="status">Status</label>
                             <select id="status" name="status">
-                                <option value="draft">📝 Draft</option>
-                                <option value="active">✅ Active</option>
-                                <option value="scheduled">⏳ Scheduled</option>
+                                <option value="draft"><i class="fas fa-edit me-1"></i>Draft</option>
+                                <option value="active"><i class="fas fa-check me-1"></i>Active</option>
+                                <option value="scheduled"><i class="fas fa-clock me-1"></i>Scheduled</option>
                             </select>
                         </div>
                     </div>
                     
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">💾 Save Rule</button>
-                        <button type="button" class="btn btn-secondary" onclick="hideNewRuleForm()">❌ Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Rule
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="hideNewRuleForm()">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </button>
                     </div>
                 </form>
             </div>
@@ -206,24 +219,31 @@
                             </div>
                             
                             <div class="rule-details">
-                                <p><strong>📅 Period:</strong> {{ rule.start_date|date:"M d, Y H:i" }} → {{ rule.end_date|date:"M d, Y H:i" }}</p>
-                                <p><strong>🔑 Keywords:</strong> {{ rule.keywords }}</p>
-                                <p><strong>📝 Response:</strong> {{ rule.response_template|truncatechars:100 }}</p>
+                                <p><strong><i class="fas fa-calendar me-1"></i>Period:</strong> {{ rule.start_date|date:"M d, Y H:i" }} → {{ rule.end_date|date:"M d, Y H:i" }}</p>
+                                <p><strong><i class="fas fa-key me-1"></i>Keywords:</strong> {{ rule.keywords }}</p>
+                                <p><strong><i class="fas fa-edit me-1"></i>Response:</strong> {{ rule.response_template|truncatechars:100 }}</p>
                             </div>
                             
                             <div class="rule-actions">
-                                <button class="btn btn-sm btn-edit" onclick="editRule({{ rule.id }})">✏️ Edit</button>
+                                <button class="btn btn-sm btn-edit" onclick="editRule({{ rule.id }})">
+                                    <i class="fas fa-edit me-1"></i>Edit
+                                </button>
                                 <a href="{% url 'temporal_rule_delete' rule.id %}" 
                                    class="btn btn-sm btn-danger" 
-                                   onclick="return confirm('Delete rule {{ rule.name }}?')">🗑️ Delete</a>
+                                   onclick="return confirm('Delete rule {{ rule.name }}?')">
+                                    <i class="fas fa-trash me-1"></i>Delete
+                                </a>
                             </div>
                         </div>
                     {% endfor %}
                 {% else %}
                     <div class="empty-state">
-                        <h3>📝 No Temporal Rules Yet</h3>
+                        <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                        <h3>No Temporal Rules Yet</h3>
                         <p>Create your first temporal rule to start automating responses for specific time periods.</p>
-                        <button class="btn btn-primary" onclick="showNewRuleForm()">➕ Create First Rule</button>
+                        <button class="btn btn-primary" onclick="showNewRuleForm()">
+                            <i class="fas fa-plus me-2"></i>Create First Rule
+                        </button>
                     </div>
                 {% endif %}
             </div>
