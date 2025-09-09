@@ -16,68 +16,120 @@
 
 {% if not has_gmail %}
 <div class="card text-center">
-    <h2>Connect Your Gmail Account</h2>
-    <p class="mb-2">To view your emails, please connect your Gmail account using secure OAuth2 authentication.</p>
-    <a href="{% url 'connect_gmail' %}" class="btn btn-success">Connect Gmail Account</a>
+    <div class="card-body py-5">
+        <i class="fas fa-envelope fa-4x text-primary mb-4"></i>
+        <h2 class="card-title">Connect Your Gmail Account</h2>
+        <p class="card-text text-muted mb-4">To view your emails, please connect your Gmail account using secure OAuth2 authentication.</p>
+        <a href="{% url 'connect_gmail' %}" class="btn btn-success btn-lg">
+            <i class="fab fa-google me-2"></i>Connect Gmail Account
+        </a>
+    </div>
 </div>
 {% else %}
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>📧 Your Gmail: {{ gmail_account.email }}</h2>
-        <div class="dashboard-actions">
-            <a href="{% url 'sync_emails' %}" class="btn" id="sync-btn">🔄 Sync Emails</a>
-            <a href="{% url 'ai_config' %}" class="btn btn-ai">🤖 AI Config</a>
-            <a href="{% url 'ai_responses' %}" class="btn btn-ai">📤 AI Responses</a>
-            <button onclick="toggleLogs()" class="btn btn-secondary">📋 System Logs</button>
-            <button onclick="confirmDisconnect()" class="btn btn-danger">🔌 Disconnect</button>
+    <div class="card-body">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3">
+            <div class="mb-3 mb-md-0">
+                <h2 class="card-title mb-1">
+                    <i class="fas fa-envelope text-primary me-2"></i>Your Gmail: {{ gmail_account.email }}
+                </h2>
+                <small class="text-muted">
+                    <strong>Status:</strong> 
+                    <span id="connection-status" class="text-success">
+                        <i class="fas fa-check-circle me-1"></i>Connected
+                    </span> | 
+                    <strong>Last Updated:</strong> {{ gmail_account.updated_at|date:"M d, Y H:i" }}
+                </small>
+            </div>
+            
+            <div class="dashboard-actions">
+                <a href="{% url 'sync_emails' %}" class="btn btn-primary" id="sync-btn">
+                    <i class="fas fa-sync"></i>Sync Emails
+                </a>
+                <a href="{% url 'ai_config' %}" class="btn btn-secondary">
+                    <i class="fas fa-robot"></i>AI Config
+                </a>
+                <a href="{% url 'ai_responses' %}" class="btn btn-info">
+                    <i class="fas fa-paper-plane"></i>AI Responses
+                </a>
+                <button onclick="toggleLogs()" class="btn btn-outline-secondary">
+                    <i class="fas fa-clipboard-list"></i>System Logs
+                </button>
+                <button onclick="confirmDisconnect()" class="btn btn-outline-danger">
+                    <i class="fas fa-unlink"></i>Disconnect
+                </button>
+            </div>
         </div>
-    </div>
-    
-    <!-- Connection Status -->
-    <div style="margin-top: 10px;">
-        <small style="color: #5f6368;">
-            <strong>Status:</strong> 
-            <span id="connection-status" style="color: #137333;">✅ Connected</span> | 
-            <strong>Last Updated:</strong> {{ gmail_account.updated_at|date:"M d, Y H:i" }}
-        </small>
     </div>
 </div>
 
 <!-- System Logs Panel (Initially Hidden) -->
-<div id="logs-panel" class="card" style="display: none; max-height: 300px; overflow-y: auto; background: #f8f9fa;">
-    <h4>📋 System Logs (Last 100 entries)</h4>
-    <pre id="logs-content" style="font-size: 12px; margin: 0;">Loading logs...</pre>
-    <button onclick="refreshLogs()" class="btn btn-sm" style="margin-top: 10px;">🔄 Refresh Logs</button>
+<div id="logs-panel" class="card" style="display: none;">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">
+            <i class="fas fa-clipboard-list me-2"></i>System Logs (Last 100 entries)
+        </h5>
+    </div>
+    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+        <pre id="logs-content" class="small text-muted mb-0">Loading logs...</pre>
+    </div>
+    <div class="card-footer">
+        <button onclick="refreshLogs()" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-sync me-1"></i>Refresh Logs
+        </button>
+    </div>
 </div>
 
 <div class="card">
-    <h3>Recent Emails ({{ emails.count }})</h3>
-    
-    {% if emails %}
-        {% for email in emails %}
-        <div class="email-item">
-            <div class="email-subject">
-                <a href="{% url 'email_detail' email.id %}" style="text-decoration: none; color: #1a73e8;">
-                    {{ email.subject|default:"(No Subject)" }}
-                </a>
+    <div class="card-header bg-light">
+        <h3 class="mb-0">
+            <i class="fas fa-inbox me-2"></i>Recent Emails ({{ emails.count }})
+        </h3>
+    </div>
+    <div class="card-body p-0">
+        {% if emails %}
+            {% for email in emails %}
+            <div class="email-item px-3">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="email-subject">
+                            <a href="{% url 'email_detail' email.id %}" class="text-decoration-none">
+                                {% if not email.is_read %}
+                                    <i class="fas fa-circle text-primary me-2" style="font-size: 0.5rem;"></i>
+                                {% endif %}
+                                {{ email.subject|default:"(No Subject)" }}
+                            </a>
+                        </div>
+                        <div class="email-meta">
+                            <i class="fas fa-user me-1"></i><strong>From:</strong> {{ email.sender }}
+                            {% if email.body_plain %}
+                            <div class="mt-2 text-muted small">
+                                {{ email.body_plain|truncatechars:120 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>{{ email.received_date|date:"M d, Y H:i" }}
+                        </small>
+                        {% if not email.is_read %}
+                            <div class="mt-1">
+                                <span class="badge bg-primary">UNREAD</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <div class="email-meta">
-                <strong>From:</strong> {{ email.sender }}<br>
-                <strong>Date:</strong> {{ email.received_date|date:"M d, Y H:i" }}
-                {% if not email.is_read %}<span style="color: #ea4335; font-weight: bold;"> • UNREAD</span>{% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-3">No emails found.</p>
+                <p class="text-muted">Click "Sync Emails" to fetch your latest emails.</p>
             </div>
-            {% if email.body_plain %}
-            <div style="margin-top: 8px; color: #5f6368; font-size: 0.9em;">
-                {{ email.body_plain|truncatechars:150 }}
-            </div>
-            {% endif %}
-        </div>
-        {% endfor %}
-    {% else %}
-        <p style="color: #666; text-align: center; margin: 2rem 0;">
-            No emails found. Click "Sync Emails" to fetch your latest emails.
-        </p>
-    {% endif %}
+        {% endif %}
+    </div>
 </div>
 {% endif %}
 
@@ -128,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const syncBtn = document.getElementById('sync-btn');
     if (syncBtn) {
         syncBtn.addEventListener('click', function() {
-            this.innerHTML = '⏳ Syncing...';
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Syncing...';
             this.style.pointerEvents = 'none';
         });
     }
@@ -136,73 +188,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Confirm disconnect function
 function confirmDisconnect() {
-    if (confirm('⚠️ Are you sure you want to disconnect your Gmail account?\n\nThis will delete all synced emails and you\'ll need to reconnect to access Gmail again.')) {
+    if (confirm('Are you sure you want to disconnect your Gmail account?\n\nThis will delete all synced emails and you\'ll need to reconnect to access Gmail again.')) {
         window.location.href = "{% url 'disconnect_gmail' %}";
     }
 }
 </script>
 
-<style>
-.alert {
-    padding: 15px;
-    margin-bottom: 20px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-}
-
-.alert-success {
-    color: #155724;
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-}
-
-.alert-error, .alert-oauth_expired, .alert-quota_exceeded, 
-.alert-permission_error, .alert-api_error, .alert-unexpected_error {
-    color: #721c24;
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-}
-
-.alert-warning {
-    color: #856404;
-    background-color: #fff3cd;
-    border-color: #ffeaa7;
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-}
-
-.btn-danger {
-    background-color: #dc3545;
-    color: white;
-    border: 1px solid #dc3545;
-}
-
-.btn-ai {
-    background-color: #9c27b0;
-    color: white;
-    border: 1px solid #9c27b0;
-}
-
-.dashboard-actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-@media (max-width: 768px) {
-    .dashboard-actions {
-        flex-direction: column;
-        gap: 8px;
-    }
-    
-    .dashboard-actions .btn {
-        font-size: 12px;
-        padding: 6px 12px;
-    }
-}
-</style>
 {% endblock %}
