@@ -22,7 +22,7 @@ logger = logging.getLogger('gmail_app')
 def home(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
-    return render(request, 'gmail_app/home.html')
+    return redirect('login')
 
 
 def simple_login(request):
