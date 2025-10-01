@@ -1,63 +1,219 @@
-{% extends 'base.html' %}
+{% extends 'gmail_app/base_dashboard.html' %}
+
+{% block title %}Email Detail - FriendlyMail{% endblock %}
+
+{% block page_icon %}<i class="fas fa-envelope-open" style="color: #4285f4; margin-right: 0.5rem;"></i>{% endblock %}
+{% block page_title %}{{ email.subject|default:"(No Subject)"|truncatechars:50 }}{% endblock %}
+
+{% block top_bar_actions %}
+<a href="{% url 'dashboard' %}" class="sync-button">
+    <i class="fas fa-arrow-left"></i>
+    <span>Back</span>
+</a>
+{% endblock %}
+
+{% block extra_styles %}
+.email-detail-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.email-meta {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.email-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmin(250px, 1fr));
+    gap: 1rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #4a5568;
+}
+
+.meta-item i {
+    color: #4285f4;
+    width: 20px;
+}
+
+.meta-label {
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.status-read {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-unread {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.email-content-section {
+    padding: 2rem;
+}
+
+.content-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.content-header h4 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.content-header i {
+    color: #4285f4;
+    font-size: 1.25rem;
+}
+
+.html-content {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.html-content-inner {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.plain-content {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #2d3748;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.empty-content {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #a0aec0;
+}
+
+.empty-content i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-content p {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .email-content-section {
+        padding: 1rem;
+    }
+
+    .html-content-inner {
+        padding: 1rem;
+    }
+}
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-        <h1 class="card-title mb-0">
-            <i class="fas fa-envelope text-primary me-2"></i>{{ email.subject|default:"(No Subject)" }}
-        </h1>
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
-        </a>
-    </div>
-    
-    <div class="card-body">
-        <div class="email-meta mb-4 p-3 bg-light rounded">
-            <div class="row">
-                <div class="col-md-6">
-                    <p class="mb-2"><strong><i class="fas fa-user me-2"></i>From:</strong> {{ email.sender }}</p>
-                    <p class="mb-2"><strong><i class="fas fa-envelope me-2"></i>To:</strong> {{ email.recipient }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="mb-2"><strong><i class="fas fa-calendar me-2"></i>Date:</strong> {{ email.received_date|date:"F d, Y H:i" }}</p>
-                    <p class="mb-0">
-                        <strong><i class="fas fa-info-circle me-2"></i>Status:</strong> 
-                        {% if email.is_read %}
-                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Read</span>
-                        {% else %}
-                            <span class="badge bg-primary"><i class="fas fa-circle me-1"></i>Unread</span>
-                        {% endif %}
-                    </p>
-                </div>
+<div class="email-detail-card">
+    <div class="email-meta">
+        <div class="email-meta-grid">
+            <div class="meta-item">
+                <i class="fas fa-user"></i>
+                <span><span class="meta-label">From:</span> {{ email.sender }}</span>
+            </div>
+            <div class="meta-item">
+                <i class="fas fa-envelope"></i>
+                <span><span class="meta-label">To:</span> {{ email.recipient }}</span>
+            </div>
+            <div class="meta-item">
+                <i class="fas fa-calendar"></i>
+                <span><span class="meta-label">Date:</span> {{ email.received_date|date:"F d, Y H:i" }}</span>
+            </div>
+            <div class="meta-item">
+                <i class="fas fa-info-circle"></i>
+                <span class="meta-label">Status:</span>
+                {% if email.is_read %}
+                    <span class="status-badge status-read">
+                        <i class="fas fa-check"></i> Read
+                    </span>
+                {% else %}
+                    <span class="status-badge status-unread">
+                        <i class="fas fa-circle"></i> Unread
+                    </span>
+                {% endif %}
             </div>
         </div>
-        
-        <div class="email-content">
-            {% if email.body_html %}
-                <div class="mb-4">
-                    <h4 class="mb-3"><i class="fas fa-code text-info me-2"></i>HTML Content</h4>
-                    <div class="border rounded p-3" style="background-color: #f8f9fa;">
-                        <div class="bg-white p-3 rounded shadow-sm">
-                            {{ email.body_html|safe }}
-                        </div>
+    </div>
+
+    <div class="email-content-section">
+        {% if email.body_html %}
+            <div style="margin-bottom: 2rem;">
+                <div class="content-header">
+                    <i class="fas fa-code"></i>
+                    <h4>HTML Content</h4>
+                </div>
+                <div class="html-content">
+                    <div class="html-content-inner">
+                        {{ email.body_html|safe }}
                     </div>
                 </div>
-            {% endif %}
-            
-            {% if email.body_plain %}
-                <div class="mb-4">
-                    <h4 class="mb-3"><i class="fas fa-file-alt text-secondary me-2"></i>Plain Text</h4>
-                    <pre class="bg-light p-3 border rounded" style="white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 0.9rem;">{{ email.body_plain }}</pre>
+            </div>
+        {% endif %}
+
+        {% if email.body_plain %}
+            <div style="margin-bottom: 2rem;">
+                <div class="content-header">
+                    <i class="fas fa-file-alt"></i>
+                    <h4>Plain Text</h4>
                 </div>
-            {% endif %}
-            
-            {% if not email.body_plain and not email.body_html %}
-                <div class="text-center py-5">
-                    <i class="fas fa-exclamation-circle fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No content available for this email.</p>
-                </div>
-            {% endif %}
-        </div>
+                <div class="plain-content">{{ email.body_plain }}</div>
+            </div>
+        {% endif %}
+
+        {% if not email.body_plain and not email.body_html %}
+            <div class="empty-content">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>No content available for this email</p>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

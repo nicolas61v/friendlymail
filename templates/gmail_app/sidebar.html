@@ -1,0 +1,64 @@
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-logo">
+            <i class="fas fa-envelope"></i>
+        </div>
+        <h1 class="sidebar-title">FriendlyMail</h1>
+    </div>
+
+    <ul class="sidebar-menu">
+        <li class="sidebar-item">
+            <a href="{% url 'dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-home sidebar-icon"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="{% url 'sync_emails' %}" class="sidebar-link {% if request.resolver_match.url_name == 'sync_emails' %}active{% endif %}">
+                <i class="fas fa-sync sidebar-icon"></i>
+                <span>Sync Emails</span>
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="{% url 'ai_config' %}" class="sidebar-link {% if request.resolver_match.url_name == 'ai_config' %}active{% endif %}">
+                <i class="fas fa-robot sidebar-icon"></i>
+                <span>AI Configuration</span>
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="{% url 'ai_responses' %}" class="sidebar-link {% if request.resolver_match.url_name == 'ai_responses' %}active{% endif %}">
+                <i class="fas fa-paper-plane sidebar-icon"></i>
+                <span>AI Responses</span>
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="#" onclick="toggleLogs(); return false;" class="sidebar-link">
+                <i class="fas fa-clipboard-list sidebar-icon"></i>
+                <span>System Logs</span>
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="#" onclick="confirmDisconnect(); return false;" class="sidebar-link">
+                <i class="fas fa-sign-out-alt sidebar-icon"></i>
+                <span>Disconnect</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <div class="user-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="user-details">
+                <p class="user-name">{{ user.username }}</p>
+                {% if gmail_account %}
+                <p class="user-email">{{ gmail_account.email }}</p>
+                {% else %}
+                <p class="user-email">No account connected</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</aside>

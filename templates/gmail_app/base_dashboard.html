@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FriendlyMail{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            overflow-x: hidden;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #4285f4 0%, #1a73e8 100%);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .sidebar-logo {
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .sidebar-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .sidebar-menu {
+            padding: 1.5rem 0;
+            list-style: none;
+        }
+
+        .sidebar-item {
+            margin: 0.25rem 0;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.875rem 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .sidebar-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: 600;
+        }
+
+        .sidebar-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: white;
+        }
+
+        .sidebar-icon {
+            width: 24px;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .user-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-email {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            min-height: 100vh;
+            background: #f5f7fa;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 1.25rem 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .sync-button {
+            background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .sync-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(66, 133, 244, 0.4);
+            color: white;
+        }
+
+        .content-area {
+            padding: 2rem;
+        }
+
+        /* Messages */
+        .message-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            max-width: 400px;
+        }
+
+        .alert-custom {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-custom.success {
+            border-left: 4px solid #34a853;
+        }
+
+        .alert-custom.error {
+            border-left: 4px solid #ea4335;
+        }
+
+        .alert-custom.info {
+            border-left: 4px solid #4285f4;
+        }
+
+        .alert-icon {
+            font-size: 1.25rem;
+        }
+
+        .alert-custom.success .alert-icon {
+            color: #34a853;
+        }
+
+        .alert-custom.error .alert-icon {
+            color: #ea4335;
+        }
+
+        .alert-custom.info .alert-icon {
+            color: #4285f4;
+        }
+
+        .alert-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #a0aec0;
+            cursor: pointer;
+            padding: 0;
+            margin-left: auto;
+        }
+
+        /* Toggle Sidebar Button (Mobile) */
+        .sidebar-toggle {
+            display: none;
+            background: #4285f4;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .sidebar {
+                transform: translateX(-260px);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+
+            .content-area {
+                padding: 1rem;
+            }
+
+            .top-bar {
+                padding: 1rem;
+            }
+        }
+
+        {% block extra_styles %}{% endblock %}
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        {% include 'gmail_app/sidebar.html' %}
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div style="display: flex; align-items: center;">
+                    <button class="sidebar-toggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 class="page-title">
+                        {% block page_icon %}<i class="fas fa-home" style="color: #4285f4; margin-right: 0.5rem;"></i>{% endblock %}
+                        {% block page_title %}Dashboard{% endblock %}
+                    </h2>
+                </div>
+                <div>
+                    {% block top_bar_actions %}{% endblock %}
+                </div>
+            </div>
+
+            <div class="content-area">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Messages -->
+    <div class="message-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-custom {{ message.tags|default:'info' }}" id="message-{{ forloop.counter }}">
+                    <i class="fas {% if 'success' in message.tags %}fa-check-circle{% elif 'error' in message.tags %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} alert-icon"></i>
+                    <div style="flex: 1;">
+                        {{ message|safe }}
+                        {% if 'oauth_expired' in message.tags %}
+                            <br><a href="{% url 'connect_gmail' %}" style="color: #4285f4; font-weight: 600;">Reconnect Gmail</a>
+                        {% endif %}
+                    </div>
+                    <button onclick="dismissMessage('message-{{ forloop.counter }}')" class="alert-close">&times;</button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <script>
+function dismissMessage(messageId) {
+    const msg = document.getElementById(messageId);
+    msg.style.opacity = '0';
+    setTimeout(() => msg.remove(), 300);
+}
+
+function toggleLogs() {
+    const panel = document.getElementById('logs-panel');
+    if (panel) {
+        if (panel.style.display === 'none' || !panel.style.display) {
+            panel.style.display = 'block';
+            if (typeof refreshLogs === 'function') {
+                refreshLogs();
+            }
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+}
+
+// Toggle sidebar for mobile
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('active');
+}
+
+// Confirm disconnect function
+function confirmDisconnect() {
+    if (confirm('Are you sure you want to disconnect your Gmail account?\n\nThis will delete all synced emails and you\'ll need to reconnect to access Gmail again.')) {
+        window.location.href = "{% url 'disconnect_gmail' %}";
+    }
+}
+
+// Close sidebar on mobile when clicking outside
+document.addEventListener('click', function(event) {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.querySelector('.sidebar-toggle');
+
+    if (window.innerWidth <= 968 && sidebar && sidebar.classList.contains('active')) {
+        if (!sidebar.contains(event.target) && (!toggle || !toggle.contains(event.target))) {
+            sidebar.classList.remove('active');
+        }
+    }
+});
+
+// Auto-hide success messages after 5 seconds
+setTimeout(function() {
+    const successMessages = document.querySelectorAll('.alert-custom.success');
+    successMessages.forEach(function(msg) {
+        msg.style.transition = 'opacity 0.5s';
+        msg.style.opacity = '0';
+        setTimeout(() => msg.remove(), 500);
+    });
+}, 5000);
+
+{% block extra_scripts %}{% endblock %}
+    </script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
