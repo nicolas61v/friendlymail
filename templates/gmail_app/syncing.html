@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sincronizando Emails - FriendlyMail</title>
+
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .sync-container {
+            background: white;
+            padding: 3rem 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sync-icon {
+            font-size: 5rem;
+            color: #4285f4;
+            margin-bottom: 2rem;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .sync-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 1rem;
+        }
+
+        .sync-message {
+            color: #718096;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4285f4, #667eea);
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200px 0;
+            }
+            100% {
+                background-position: 200px 0;
+            }
+        }
+
+        .status-text {
+            color: #4285f4;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4285f4;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-top: 0.5rem;
+        }
+
+        .error-container {
+            display: none;
+            background: #fee;
+            border: 2px solid #fcc;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .error-container.show {
+            display: block;
+        }
+
+        .error-icon {
+            font-size: 3rem;
+            color: #ea4335;
+            margin-bottom: 1rem;
+        }
+
+        .error-message {
+            color: #c53030;
+            margin-bottom: 1rem;
+        }
+
+        .btn-dashboard {
+            display: inline-block;
+            background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            margin-top: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-dashboard:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(66, 133, 244, 0.4);
+            color: white;
+        }
+
+        .success-icon {
+            font-size: 5rem;
+            color: #34a853;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="sync-container">
+        <div id="syncing-state">
+            <div class="sync-icon">
+                <i class="fas fa-sync"></i>
+            </div>
+            <h1 class="sync-title">Sincronizando Emails</h1>
+            <p class="sync-message">Estamos descargando tus emails de Gmail...</p>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <p class="status-text" id="status-text">Conectando con Gmail...</p>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="synced-count">0</div>
+                    <div class="stat-label">Emails</div>
+                </div>
+                <div class="stat-item" id="ai-stats" style="display: none;">
+                    <div class="stat-value" id="ai-count">0</div>
+                    <div class="stat-label">Procesados con IA</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="success-state" style="display: none;">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h1 class="sync-title">¡Sincronización Completa!</h1>
+            <p class="sync-message" id="success-message"></p>
+            <a href="{% url 'dashboard' %}" class="btn-dashboard">
+                <i class="fas fa-home"></i> Ir al Dashboard
+            </a>
+        </div>
+
+        <div id="error-state" class="error-container">
+            <div class="error-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 style="color: #c53030; margin-bottom: 1rem;">Error de Sincronización</h3>
+            <p class="error-message" id="error-message"></p>
+            <a href="{% url 'dashboard' %}" class="btn-dashboard">
+                Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Start synchronization immediately
+        window.addEventListener('DOMContentLoaded', function() {
+            startSync();
+        });
+
+        function startSync() {
+            const statusText = document.getElementById('status-text');
+            const progressBar = document.getElementById('progress-bar');
+            const syncedCount = document.getElementById('synced-count');
+
+            // Update status
+            statusText.textContent = 'Descargando emails...';
+            progressBar.style.width = '30%';
+
+            // Make API call
+            fetch('{% url "sync_emails_api" %}', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                progressBar.style.width = '100%';
+
+                if (data.success) {
+                    // Update stats
+                    syncedCount.textContent = data.synced || 0;
+
+                    if (data.ai_enabled && data.ai_processed) {
+                        document.getElementById('ai-stats').style.display = 'block';
+                        document.getElementById('ai-count').textContent = data.ai_processed || 0;
+                    }
+
+                    // Show success state after a brief delay
+                    setTimeout(() => {
+                        document.getElementById('syncing-state').style.display = 'none';
+                        document.getElementById('success-state').style.display = 'block';
+
+                        let message = `Se sincronizaron ${data.synced || 0} emails correctamente.`;
+                        if (data.ai_responses && data.ai_responses > 0) {
+                            message += ` La IA generó ${data.ai_responses} respuestas para tu revisión.`;
+                        }
+
+                        document.getElementById('success-message').textContent = message;
+
+                        // Auto-redirect after 3 seconds
+                        setTimeout(() => {
+                            window.location.href = '{% url "dashboard" %}';
+                        }, 3000);
+                    }, 1000);
+                } else {
+                    showError(data.message || 'Error desconocido durante la sincronización');
+                }
+            })
+            .catch(error => {
+                console.error('Sync error:', error);
+                showError('Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.');
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('syncing-state').style.display = 'none';
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-state').classList.add('show');
+        }
+    </script>
+</body>
+</html>

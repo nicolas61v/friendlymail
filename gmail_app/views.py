@@ -127,7 +127,8 @@ def gmail_callback(request):
         gmail_service = GmailService(request.user)
         gmail_account = gmail_service.handle_oauth_callback(request)
         messages.success(request, f'✅ Gmail account {gmail_account.email} connected successfully!')
-        return redirect('sync_emails')
+        messages.info(request, '📥 Ready to sync your emails! Click "Sync Now" to start.')
+        return redirect('dashboard')
     except OAuthError as e:
         logger.error(f"OAuth error for user {request.user.username}: {e}")
         if hasattr(e, 'error_type') and e.error_type == 'no_refresh_token':
@@ -171,90 +172,103 @@ def gmail_callback(request):
 
 @login_required
 def sync_emails(request):
+    """Show syncing page with progress"""
+    return render(request, 'gmail_app/syncing.html')
+
+
+@login_required
+def sync_emails_api(request):
+    """API endpoint for email synchronization"""
     try:
         logger.info(f"User {request.user.username} initiated email sync")
         gmail_service = GmailService(request.user)
         synced_emails = gmail_service.sync_emails()
-        
+
         # Check if user has AI processing enabled
         try:
             ai_context = AIContext.objects.get(user=request.user, is_active=True)
-            
+
             if synced_emails:
                 # Process new emails with AI
                 ai_processor = EmailAIProcessor()
                 processed_count = 0
                 responses_generated = 0
-                
+
                 for email in synced_emails:
                     try:
                         intent, ai_response = ai_processor.process_email(email)
                         processed_count += 1
-                        
+
                         if ai_response:
                             responses_generated += 1
-                            
+
                     except Exception as e:
                         logger.error(f"Error processing email {email.id} with AI: {e}")
-                
-                if responses_generated > 0:
-                    messages.success(request, 
-                        f'✅ Synced {len(synced_emails)} emails, AI generated {responses_generated} responses!')
-                    messages.info(request, 
-                        f'🤖 {responses_generated} AI responses pending your approval. <a href="/ai-responses/">Review them here</a>')
-                else:
-                    messages.success(request, 
-                        f'✅ Synced {len(synced_emails)} emails, {processed_count} analyzed by AI')
+
+                return JsonResponse({
+                    'success': True,
+                    'synced': len(synced_emails),
+                    'ai_processed': processed_count,
+                    'ai_responses': responses_generated,
+                    'message': f'✅ Synced {len(synced_emails)} emails successfully!',
+                    'ai_enabled': True
+                })
             else:
-                messages.success(request, f'✅ Synced {len(synced_emails)} new emails successfully!')
-                
+                return JsonResponse({
+                    'success': True,
+                    'synced': 0,
+                    'message': '✅ No new emails to sync',
+                    'ai_enabled': True
+                })
+
         except AIContext.DoesNotExist:
-            messages.success(request, f'✅ Synced {len(synced_emails)} new emails successfully!')
-            if synced_emails:
-                messages.info(request, 
-                    f'💡 <a href="/ai-config/">Configure AI Assistant</a> to automatically analyze and respond to emails')
+            return JsonResponse({
+                'success': True,
+                'synced': len(synced_emails),
+                'message': f'✅ Synced {len(synced_emails)} new emails successfully!',
+                'ai_enabled': False
+            })
+
     except RefreshTokenInvalidError as e:
         logger.warning(f"Token expired for user {request.user.username}: {e}")
-        messages.error(
-            request, 
-            '⚠️ Your Gmail access has expired. Please reconnect your account to continue syncing emails.',
-            extra_tags='oauth_expired'
-        )
         # Delete the expired account to force reconnection
         try:
             GmailAccount.objects.get(user=request.user).delete()
         except GmailAccount.DoesNotExist:
             pass
+        return JsonResponse({
+            'success': False,
+            'error': 'token_expired',
+            'message': '⚠️ Your Gmail access has expired. Please reconnect your account.'
+        })
     except QuotaExceededError as e:
         logger.error(f"Gmail API quota exceeded for user {request.user.username}: {e}")
-        messages.error(
-            request,
-            '⏳ Gmail API quota exceeded. Please try again in a few minutes.',
-            extra_tags='quota_exceeded'
-        )
+        return JsonResponse({
+            'success': False,
+            'error': 'quota_exceeded',
+            'message': '⏳ Gmail API quota exceeded. Please try again in a few minutes.'
+        })
     except PermissionError as e:
         logger.error(f"Permission error for user {request.user.username}: {e}")
-        messages.error(
-            request,
-            '🔒 Insufficient permissions to access Gmail. Please reconnect your account with proper permissions.',
-            extra_tags='permission_error'
-        )
+        return JsonResponse({
+            'success': False,
+            'error': 'permission_error',
+            'message': '🔒 Insufficient permissions. Please reconnect your account.'
+        })
     except GmailAPIError as e:
         logger.error(f"Gmail API error for user {request.user.username}: {e}")
-        messages.error(
-            request,
-            f'📧 Gmail service error: {str(e)}. Please try again later.',
-            extra_tags='api_error'
-        )
+        return JsonResponse({
+            'success': False,
+            'error': 'api_error',
+            'message': f'📧 Gmail service error: {str(e)}. Please try again later.'
+        })
     except Exception as e:
         logger.error(f"Unexpected error during sync for user {request.user.username}: {e}")
-        messages.error(
-            request, 
-            f'❌ Unexpected error occurred: {str(e)}. Please contact support if this persists.',
-            extra_tags='unexpected_error'
-        )
-    
-    return redirect('dashboard')
+        return JsonResponse({
+            'success': False,
+            'error': 'unexpected_error',
+            'message': f'❌ Unexpected error occurred: {str(e)}.'
+        })
 
 
 @login_required
@@ -361,8 +375,8 @@ def ai_config(request):
         'temporal_rules': temporal_rules,
         'has_ai_config': ai_context is not None
     }
-    
-    return render(request, 'gmail_app/ai_config.html', context)
+
+    return render(request, 'gmail_app/ai_config_simple.html', context)
 
 
 @login_required

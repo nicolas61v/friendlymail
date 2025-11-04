@@ -12,6 +12,7 @@ urlpatterns = [
     path('connect-gmail/', views.connect_gmail, name='connect_gmail'),
     path('gmail/callback/', views.gmail_callback, name='gmail_callback'),
     path('sync-emails/', views.sync_emails, name='sync_emails'),
+    path('api/sync-emails/', views.sync_emails_api, name='sync_emails_api'),
     path('email/<int:email_id>/', views.email_detail, name='email_detail'),
     path('api/logs/', views.system_logs, name='system_logs'),
     path('disconnect-gmail/', views.disconnect_gmail, name='disconnect_gmail'),
