@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_apscheduler',
     'gmail_app',
 ]
 
@@ -184,3 +185,10 @@ LOGGING = {
         },
     },
 }
+
+# APScheduler Configuration for Auto-Sync
+SCHEDULER_AUTOSTART = True
+SCHEDULER_DEFAULT = True
+
+# Auto-sync interval in minutes
+AUTO_SYNC_INTERVAL_MINUTES = 20
