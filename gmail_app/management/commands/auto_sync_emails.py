@@ -5,6 +5,7 @@ Se ejecuta periódicamente mediante APScheduler
 import logging
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
+from django.utils import timezone
 from gmail_app.models import GmailAccount, Email
 from gmail_app.gmail_service import GmailService
 from gmail_app.ai_service import EmailAIProcessor
@@ -84,6 +85,7 @@ class Command(BaseCommand):
 
                 processed_count = 0
                 responses_generated = 0
+                auto_sent = 0
 
                 for email in synced_emails:
                     try:
@@ -96,15 +98,28 @@ class Command(BaseCommand):
                             # Auto-enviar si está configurado
                             if ai_context.auto_send and ai_response.status == 'pending_approval':
                                 try:
-                                    # Aquí se enviaría el email automáticamente
-                                    # Por seguridad, por ahora solo lo marcamos
-                                    ai_response.status = 'approved'
+                                    # Enviar el email automáticamente
+                                    sent_message_id = gmail_service.send_email(
+                                        to_email=ai_response.email_intent.email.sender,
+                                        subject=ai_response.response_subject,
+                                        body=ai_response.response_text,
+                                        reply_to_message_id=ai_response.email_intent.email.gmail_id
+                                    )
+
+                                    # Marcar como enviado
+                                    ai_response.status = 'sent'
+                                    ai_response.sent_at = timezone.now()
                                     ai_response.save()
+
+                                    auto_sent += 1
                                     logger.info(
-                                        f'Respuesta auto-aprobada para {email.subject[:50]}'
+                                        f'Auto-enviado: {ai_response.response_subject[:50]} a {email.sender}'
                                     )
                                 except Exception as e:
-                                    logger.error(f'Error auto-enviando: {e}')
+                                    logger.error(f'Error auto-enviando email {email.id}: {e}')
+                                    # Dejar como approved si falla el envío
+                                    ai_response.status = 'approved'
+                                    ai_response.save()
 
                     except Exception as e:
                         logger.error(f'Error procesando email {email.id}: {e}')
@@ -114,8 +129,18 @@ class Command(BaseCommand):
                         f'    ├─ IA procesó {processed_count} emails'
                     )
                     self.stdout.write(
-                        f'    └─ {responses_generated} respuestas generadas'
+                        f'    ├─ {responses_generated} respuestas generadas'
                     )
+                    if auto_sent > 0:
+                        self.stdout.write(
+                            self.style.SUCCESS(
+                                f'    └─ ✉️  {auto_sent} respuestas AUTO-ENVIADAS'
+                            )
+                        )
+                    else:
+                        self.stdout.write(
+                            f'    └─ 0 auto-enviadas (pendientes de aprobación)'
+                        )
 
             except AIContext.DoesNotExist:
                 # Usuario no tiene IA configurada
