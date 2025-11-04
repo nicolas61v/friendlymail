@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to FriendlyMail</title>
+    <title>Iniciar Sesión - FriendlyMail</title>
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -69,7 +69,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             width: 100%;
-            max-width: 420px;
+            max-width: 450px;
             position: relative;
             z-index: 1;
             animation: slideInLeft 0.6s ease-out;
@@ -131,6 +131,11 @@
             font-size: 0.95rem;
         }
 
+        .form-label i {
+            margin-right: 0.5rem;
+            color: #4285f4;
+        }
+
         .form-control {
             width: 100%;
             padding: 0.875rem 1rem;
@@ -144,6 +149,10 @@
             outline: none;
             border-color: #4285f4;
             box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+        }
+
+        .form-control.is-invalid {
+            border-color: #e53e3e;
         }
 
         .btn-login {
@@ -167,6 +176,25 @@
 
         .btn-login:active {
             transform: translateY(0);
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #718096;
+            font-size: 0.95rem;
+        }
+
+        .register-link a {
+            color: #4285f4;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .register-link a:hover {
+            color: #1a73e8;
+            text-decoration: underline;
         }
 
         /* Right Side - Animation & Info */
@@ -286,6 +314,24 @@
             }
         }
 
+        .alert {
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            border: none;
+        }
+
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 0.5rem 0 0 0;
+        }
+
+        .errorlist li {
+            color: #e53e3e;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
         /* Responsive */
         @media (max-width: 968px) {
             .login-container {
@@ -315,34 +361,66 @@
                     <div class="logo-icon">
                         <i class="fas fa-envelope"></i>
                     </div>
-                    <h1>Welcome to FriendlyMail</h1>
-                    <p>Your smart email management solution</p>
+                    <h1>Bienvenido a FriendlyMail</h1>
+                    <p>Tu asistente inteligente de correo</p>
                 </div>
 
-                <form method="post">
+                <!-- Mensajes -->
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                        {{ message|safe }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <form method="post" novalidate>
                     {% csrf_token %}
+
+                    <!-- Usuario o Email -->
                     <div class="form-group">
-                        <label for="username" class="form-label">
-                            <i class="fas fa-user me-2"></i>Username
+                        <label for="{{ form.username.id_for_label }}" class="form-label">
+                            <i class="fas fa-user"></i>{{ form.username.label }}
                         </label>
-                        <input
-                            type="text"
-                            id="username"
-                            name="username"
-                            class="form-control"
-                            value="testuser"
-                            placeholder="Enter your username"
-                            required
-                        >
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.username.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="form-group">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">
+                            <i class="fas fa-lock"></i>{{ form.password.label }}
+                        </label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.password.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
                     </div>
 
                     <button type="submit" class="btn-login">
-                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                        <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
                     </button>
                 </form>
 
-                <div class="text-center mt-3" style="color: #718096; font-size: 0.85rem;">
-                    Demo Mode - Use any username to continue
+                <div class="register-link">
+                    ¿No tienes cuenta? <a href="{% url 'register' %}">Regístrate aquí</a>
                 </div>
             </div>
         </div>
@@ -363,7 +441,7 @@
                 <h2 class="tagline">FriendlyMail</h2>
 
                 <div class="animated-text" id="rotatingText">
-                    Your smart email assistant
+                    Tu asistente inteligente de correo
                 </div>
             </div>
         </div>
@@ -372,10 +450,10 @@
     <script>
         // Rotating text animation
         const phrases = [
-            "Your smart email assistant",
-            "AI-powered responses",
-            "Secure & private",
-            "Email made simple"
+            "Tu asistente inteligente de correo",
+            "Respuestas potenciadas con IA",
+            "Seguro y privado",
+            "Email simplificado"
         ];
 
         let currentPhrase = 0;
@@ -391,6 +469,20 @@
         }
 
         setInterval(rotateText, 6000);
+
+        // Agregar clase is-invalid a campos con errores
+        document.addEventListener('DOMContentLoaded', function() {
+            const errorLists = document.querySelectorAll('.errorlist');
+            errorLists.forEach(function(errorList) {
+                const formGroup = errorList.closest('.form-group');
+                if (formGroup) {
+                    const input = formGroup.querySelector('.form-control');
+                    if (input) {
+                        input.classList.add('is-invalid');
+                    }
+                }
+            });
+        });
     </script>
 
     <!-- Bootstrap JS -->

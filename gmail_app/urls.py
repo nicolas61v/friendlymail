@@ -3,7 +3,11 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('login/', views.simple_login, name='login'),
+    # Autenticación
+    path('login/', views.user_login, name='login'),
+    path('register/', views.user_register, name='register'),
+    path('logout/', views.user_logout, name='logout'),
+    # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
     path('connect-gmail/', views.connect_gmail, name='connect_gmail'),
     path('gmail/callback/', views.gmail_callback, name='gmail_callback'),

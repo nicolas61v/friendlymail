@@ -140,6 +140,11 @@ GMAIL_SCOPES = [
     'https://www.googleapis.com/auth/userinfo.email'  # Get user email reliably
 ]
 
+# Authentication Settings
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'
+
 # Logging Configuration
 LOGGING = {
     'version': 1,
