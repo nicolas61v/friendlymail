@@ -614,16 +614,26 @@ def reject_response(request, response_id):
 
 @login_required
 def resend_response(request, response_id):
-    """Resend a previously sent AI response"""
+    """Resend or send a previously sent/approved AI response"""
     try:
+        # Accept both 'sent' and 'approved' statuses
         ai_response = AIResponse.objects.get(
             id=response_id,
-            email_intent__email__gmail_account__user=request.user,
-            status='sent'
+            email_intent__email__gmail_account__user=request.user
         )
 
-        # Send the email again
+        # Only allow resending for 'sent' or 'approved' responses
+        if ai_response.status not in ['sent', 'approved']:
+            messages.warning(
+                request,
+                f'⚠️ Solo puedes reenviar respuestas que fueron enviadas o aprobadas. Estado actual: {ai_response.get_status_display()}'
+            )
+            return redirect('ai_responses')
+
+        # Send the email
         try:
+            logger.info(f"User {request.user.username} attempting to resend response {response_id} with status {ai_response.status}")
+
             gmail_service = GmailService(request.user)
             sent_message_id = gmail_service.send_email(
                 to_email=ai_response.email_intent.email.sender,
@@ -632,22 +642,24 @@ def resend_response(request, response_id):
                 reply_to_message_id=ai_response.email_intent.email.gmail_id
             )
 
-            # Update sent_at timestamp
+            # Update status and timestamp
+            ai_response.status = 'sent'
             ai_response.sent_at = timezone.now()
             ai_response.save()
 
-            messages.success(request, f'📧 Response resent successfully to {ai_response.email_intent.email.sender}!')
+            messages.success(request, f'📧 Respuesta enviada exitosamente a {ai_response.email_intent.email.sender}!')
             logger.info(f"Email resent by user {request.user.username} to {ai_response.email_intent.email.sender}")
 
         except Exception as e:
             logger.error(f"Error resending response {response_id}: {e}")
-            messages.error(request, f'❌ Error resending email: {str(e)}')
+            messages.error(request, f'❌ Error al enviar email: {str(e)}. Por favor verifica tu conexión con Gmail.')
 
     except AIResponse.DoesNotExist:
-        messages.error(request, '❌ Response not found or cannot be resent')
+        messages.error(request, '❌ Respuesta no encontrada o no tienes permiso para acceder a ella')
+        logger.warning(f"User {request.user.username} tried to resend non-existent response {response_id}")
     except Exception as e:
-        logger.error(f"Error in resend_response for user {request.user.username}: {e}")
-        messages.error(request, f'❌ Error resending response: {str(e)}')
+        logger.error(f"Unexpected error in resend_response for user {request.user.username}: {e}")
+        messages.error(request, f'❌ Error inesperado al reenviar: {str(e)}')
 
     return redirect('ai_responses')
 
@@ -726,36 +738,93 @@ def debug_ai_status(request):
             }
         except AIContext.DoesNotExist:
             ai_context_info = {'exists': False}
-        
+
+        # Check Gmail connection
+        try:
+            gmail_account = GmailAccount.objects.get(user=request.user)
+            gmail_info = {
+                'connected': True,
+                'email': gmail_account.email,
+                'has_refresh_token': bool(gmail_account.refresh_token),
+            }
+        except GmailAccount.DoesNotExist:
+            gmail_info = {'connected': False}
+
         # Check emails
         total_emails = Email.objects.filter(gmail_account__user=request.user).count()
         processed_emails = EmailIntent.objects.filter(email__gmail_account__user=request.user).count()
-        
-        # Check responses
-        total_responses = AIResponse.objects.filter(
-            email_intent__email__gmail_account__user=request.user
+
+        # Check responses by status
+        pending_count = AIResponse.objects.filter(
+            email_intent__email__gmail_account__user=request.user,
+            status='pending_approval'
         ).count()
-        
+
+        sent_count = AIResponse.objects.filter(
+            email_intent__email__gmail_account__user=request.user,
+            status='sent'
+        ).count()
+
+        approved_count = AIResponse.objects.filter(
+            email_intent__email__gmail_account__user=request.user,
+            status='approved'
+        ).count()
+
+        rejected_count = AIResponse.objects.filter(
+            email_intent__email__gmail_account__user=request.user,
+            status='rejected'
+        ).count()
+
         # Check temporal rules
         temporal_rules = TemporalRule.objects.filter(ai_context__user=request.user).count()
-        
+
+        # Check scheduler status
+        from django.conf import settings
+        scheduler_enabled = getattr(settings, 'SCHEDULER_AUTOSTART', False)
+        sync_interval = getattr(settings, 'AUTO_SYNC_INTERVAL_MINUTES', 20)
+
         debug_info = {
             'ai_context': ai_context_info,
+            'gmail': gmail_info,
             'emails': {
                 'total': total_emails,
                 'processed_by_ai': processed_emails,
                 'unprocessed': total_emails - processed_emails
             },
-            'responses': total_responses,
+            'responses': {
+                'pending_approval': pending_count,
+                'sent': sent_count,
+                'approved_not_sent': approved_count,
+                'rejected': rejected_count,
+                'total': pending_count + sent_count + approved_count + rejected_count
+            },
             'temporal_rules': temporal_rules,
             'openai_configured': bool(settings.OPENAI_API_KEY),
+            'scheduler': {
+                'enabled': scheduler_enabled,
+                'interval_minutes': sync_interval
+            },
+            'auto_send_diagnosis': {
+                'ai_context_exists': ai_context_info.get('exists', False),
+                'ai_is_active': ai_context_info.get('is_active', False),
+                'auto_send_enabled': ai_context_info.get('auto_send', False),
+                'gmail_connected': gmail_info.get('connected', False),
+                'scheduler_running': scheduler_enabled,
+                'ready_to_auto_send': (
+                    ai_context_info.get('exists', False) and
+                    ai_context_info.get('is_active', False) and
+                    ai_context_info.get('auto_send', False) and
+                    gmail_info.get('connected', False) and
+                    scheduler_enabled
+                )
+            }
         }
-        
+
         return JsonResponse({
             'success': True,
             'debug_info': debug_info
         })
-        
+
     except Exception as e:
         return JsonResponse({
             'success': False,
