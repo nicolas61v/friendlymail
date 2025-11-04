@@ -28,6 +28,7 @@ urlpatterns = [
     path('ai-responses/', views.ai_responses, name='ai_responses'),
     path('response/approve/<int:response_id>/', views.approve_response, name='approve_response'),
     path('response/reject/<int:response_id>/', views.reject_response, name='reject_response'),
+    path('response/resend/<int:response_id>/', views.resend_response, name='resend_response'),
     path('process-existing-emails/', views.process_existing_emails, name='process_existing_emails'),
     path('debug/ai-status/', views.debug_ai_status, name='debug_ai_status'),
 ]

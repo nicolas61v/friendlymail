@@ -485,42 +485,54 @@ def ai_responses(request):
     """View and manage AI responses"""
     try:
         ai_context = AIContext.objects.get(user=request.user)
-        
+
         # Get pending responses
         pending_responses = AIResponse.objects.filter(
             email_intent__email__gmail_account__user=request.user,
             status='pending_approval'
-        ).order_by('-generated_at')
-        
-        # Get recent responses
-        recent_responses = AIResponse.objects.filter(
-            email_intent__email__gmail_account__user=request.user
-        ).order_by('-generated_at')[:20]
-        
-        # Get email intents for analysis
-        email_intents = EmailIntent.objects.filter(
-            email__gmail_account__user=request.user
-        ).order_by('-processed_at')[:50]
-        
+        ).select_related('email_intent__email').order_by('-generated_at')
+
+        # Get sent responses
+        sent_responses = AIResponse.objects.filter(
+            email_intent__email__gmail_account__user=request.user,
+            status='sent'
+        ).select_related('email_intent__email').order_by('-sent_at')[:50]
+
+        # Get approved but not sent responses
+        approved_responses = AIResponse.objects.filter(
+            email_intent__email__gmail_account__user=request.user,
+            status='approved'
+        ).select_related('email_intent__email').order_by('-approved_at')
+
+        # Get rejected responses
+        rejected_responses = AIResponse.objects.filter(
+            email_intent__email__gmail_account__user=request.user,
+            status='rejected'
+        ).select_related('email_intent__email').order_by('-generated_at')[:20]
+
         context = {
             'ai_context': ai_context,
             'pending_responses': pending_responses,
-            'recent_responses': recent_responses, 
-            'email_intents': email_intents,
+            'sent_responses': sent_responses,
+            'approved_responses': approved_responses,
+            'rejected_responses': rejected_responses,
             'has_pending': pending_responses.exists(),
+            'has_sent': sent_responses.exists(),
             'has_ai_config': True
         }
-        
+
     except AIContext.DoesNotExist:
         context = {
             'has_ai_config': False,
             'ai_context': None,
             'pending_responses': [],
-            'recent_responses': [],
-            'email_intents': [],
-            'has_pending': False
+            'sent_responses': [],
+            'approved_responses': [],
+            'rejected_responses': [],
+            'has_pending': False,
+            'has_sent': False
         }
-    
+
     return render(request, 'gmail_app/ai_responses.html', context)
 
 
@@ -597,6 +609,46 @@ def reject_response(request, response_id):
         logger.error(f"Error rejecting response for user {request.user.username}: {e}")
         messages.error(request, f'❌ Error rejecting response: {str(e)}')
     
+    return redirect('ai_responses')
+
+
+@login_required
+def resend_response(request, response_id):
+    """Resend a previously sent AI response"""
+    try:
+        ai_response = AIResponse.objects.get(
+            id=response_id,
+            email_intent__email__gmail_account__user=request.user,
+            status='sent'
+        )
+
+        # Send the email again
+        try:
+            gmail_service = GmailService(request.user)
+            sent_message_id = gmail_service.send_email(
+                to_email=ai_response.email_intent.email.sender,
+                subject=ai_response.response_subject,
+                body=ai_response.response_text,
+                reply_to_message_id=ai_response.email_intent.email.gmail_id
+            )
+
+            # Update sent_at timestamp
+            ai_response.sent_at = timezone.now()
+            ai_response.save()
+
+            messages.success(request, f'📧 Response resent successfully to {ai_response.email_intent.email.sender}!')
+            logger.info(f"Email resent by user {request.user.username} to {ai_response.email_intent.email.sender}")
+
+        except Exception as e:
+            logger.error(f"Error resending response {response_id}: {e}")
+            messages.error(request, f'❌ Error resending email: {str(e)}')
+
+    except AIResponse.DoesNotExist:
+        messages.error(request, '❌ Response not found or cannot be resent')
+    except Exception as e:
+        logger.error(f"Error in resend_response for user {request.user.username}: {e}")
+        messages.error(request, f'❌ Error resending response: {str(e)}')
+
     return redirect('ai_responses')
 
 

@@ -36,6 +36,13 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     position: relative;
     overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .stat-card h3 {
@@ -58,6 +65,80 @@
     transform: translateY(-50%);
     font-size: 3rem;
     opacity: 0.1;
+}
+
+/* Tabs */
+.tabs-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2.5rem;
+    overflow: hidden;
+}
+
+.tabs-nav {
+    display: flex;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-bottom: 2px solid #e2e8f0;
+    overflow-x: auto;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 1.25rem 1.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #718096;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+}
+
+.tab-button:hover {
+    background: rgba(66, 133, 244, 0.05);
+    color: #4285f4;
+}
+
+.tab-button.active {
+    color: #4285f4;
+    background: white;
+    border-bottom: 3px solid #4285f4;
+}
+
+.tab-badge {
+    background: #e2e8f0;
+    color: #4a5568;
+    padding: 0.25rem 0.625rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.tab-button.active .tab-badge {
+    background: #4285f4;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+    padding: 2rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .card {
@@ -110,6 +191,21 @@
 .response-card.pending {
     border-left: 6px solid #fbbc04;
     background: linear-gradient(to right, #fffbf0 0%, #ffffff 100%);
+}
+
+.response-card.sent {
+    border-left: 6px solid #4285f4;
+    background: linear-gradient(to right, #f0f7ff 0%, #ffffff 100%);
+}
+
+.response-card.approved {
+    border-left: 6px solid #34a853;
+    background: linear-gradient(to right, #f0fff4 0%, #ffffff 100%);
+}
+
+.response-card.rejected {
+    border-left: 6px solid #ea4335;
+    background: linear-gradient(to right, #fff5f5 0%, #ffffff 100%);
 }
 
 .response-header {
@@ -289,6 +385,17 @@
     box-shadow: 0 6px 16px rgba(251, 188, 4, 0.4);
 }
 
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+}
+
+.btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(23, 162, 184, 0.4);
+}
+
 .original-email {
     margin-top: 1.5rem;
     padding: 1.5rem;
@@ -377,6 +484,14 @@
         width: 100%;
         justify-content: center;
     }
+
+    .tabs-nav {
+        flex-wrap: wrap;
+    }
+
+    .tab-button {
+        flex: 1 1 45%;
+    }
 }
 {% endblock %}
 
@@ -405,41 +520,62 @@
         </a>
     </div>
 
-    <!-- Stats Overview -->
+    <!-- Stats Overview (Clickable to switch tabs) -->
     <div class="stats-grid">
-        <div class="stat-card" style="border-top: 4px solid #fbbc04;">
+        <div class="stat-card" style="border-top: 4px solid #fbbc04;" onclick="switchTab('pending')">
             <h3>{{ pending_responses|length }}</h3>
             <p>Pendientes de Aprobar</p>
             <i class="fas fa-clock stat-icon"></i>
         </div>
-        <div class="stat-card" style="border-top: 4px solid #4285f4;">
-            <h3>{{ recent_responses|length }}</h3>
-            <p>Respuestas Recientes</p>
+        <div class="stat-card" style="border-top: 4px solid #4285f4;" onclick="switchTab('sent')">
+            <h3>{{ sent_responses|length }}</h3>
+            <p>Respuestas Enviadas</p>
             <i class="fas fa-paper-plane stat-icon"></i>
         </div>
-        <div class="stat-card" style="border-top: 4px solid #9c27b0;">
-            <h3>{{ email_intents|length }}</h3>
-            <p>Emails Analizados</p>
-            <i class="fas fa-brain stat-icon"></i>
+        <div class="stat-card" style="border-top: 4px solid #34a853;" onclick="switchTab('approved')">
+            <h3>{{ approved_responses|length }}</h3>
+            <p>Aprobadas (No Enviadas)</p>
+            <i class="fas fa-check stat-icon"></i>
         </div>
-        <div class="stat-card" style="border-top: 4px solid {% if ai_context.auto_send %}#34a853{% else %}#6c757d{% endif %};">
-            <h3>{% if ai_context.auto_send %}Auto{% else %}Manual{% endif %}</h3>
-            <p>Modo de Envío</p>
-            <i class="fas {% if ai_context.auto_send %}fa-bolt{% else %}fa-user{% endif %} stat-icon"></i>
+        <div class="stat-card" style="border-top: 4px solid #ea4335;" onclick="switchTab('rejected')">
+            <h3>{{ rejected_responses|length }}</h3>
+            <p>Respuestas Rechazadas</p>
+            <i class="fas fa-times stat-icon"></i>
         </div>
     </div>
 
-    <!-- Pending Approvals -->
-    {% if has_pending %}
-        <div class="card">
-            <div class="card-header">
-                <h2><i class="fas fa-clock" style="color: #fbbc04;"></i>Pendientes de Aprobación</h2>
-            </div>
-            <div class="card-body">
+    <!-- Tabs Container -->
+    <div class="tabs-container">
+        <!-- Tabs Navigation -->
+        <div class="tabs-nav">
+            <button class="tab-button active" onclick="switchTab('pending')" id="tab-pending">
+                <i class="fas fa-clock"></i>
+                Pendientes
+                <span class="tab-badge">{{ pending_responses|length }}</span>
+            </button>
+            <button class="tab-button" onclick="switchTab('sent')" id="tab-sent">
+                <i class="fas fa-paper-plane"></i>
+                Enviadas
+                <span class="tab-badge">{{ sent_responses|length }}</span>
+            </button>
+            <button class="tab-button" onclick="switchTab('approved')" id="tab-approved">
+                <i class="fas fa-check"></i>
+                Aprobadas
+                <span class="tab-badge">{{ approved_responses|length }}</span>
+            </button>
+            <button class="tab-button" onclick="switchTab('rejected')" id="tab-rejected">
+                <i class="fas fa-times"></i>
+                Rechazadas
+                <span class="tab-badge">{{ rejected_responses|length }}</span>
+            </button>
+        </div>
+
+        <!-- Tab Content: Pending Responses -->
+        <div id="content-pending" class="tab-content active">
+            {% if pending_responses %}
                 <p style="color: #718096; margin-bottom: 2rem; font-size: 1rem;">
                     Estas respuestas generadas por IA están esperando tu aprobación antes de ser enviadas.
                 </p>
-
                 <div class="responses-grid">
                     {% for response in pending_responses %}
                         <div class="response-card pending">
@@ -476,13 +612,11 @@
                                 </button>
                             </div>
 
-                            <!-- Original Email (Initially Hidden) -->
                             <div id="original-{{ response.id }}" class="original-email" style="display: none;">
                                 <h5><i class="fas fa-envelope-open-text"></i>Email Original:</h5>
                                 <div class="email-content">{{ response.email_intent.email.body_plain|truncatechars:800 }}</div>
                             </div>
 
-                            <!-- Reject Form (Initially Hidden) -->
                             <div id="reject-form-{{ response.id }}" class="reject-form" style="display: none;">
                                 <form method="post" action="{% url 'reject_response' response.id %}">
                                     {% csrf_token %}
@@ -505,23 +639,195 @@
                         </div>
                     {% endfor %}
                 </div>
-            </div>
-        </div>
-    {% else %}
-        <div class="card">
-            <div class="card-body">
+            {% else %}
                 <div class="empty-state">
                     <i class="fas fa-check-circle"></i>
                     <h3>¡Todo al día!</h3>
                     <p>No hay respuestas pendientes de aprobar.</p>
                 </div>
-            </div>
+            {% endif %}
         </div>
-    {% endif %}
+
+        <!-- Tab Content: Sent Responses -->
+        <div id="content-sent" class="tab-content">
+            {% if sent_responses %}
+                <p style="color: #718096; margin-bottom: 2rem; font-size: 1rem;">
+                    Estas respuestas ya fueron enviadas por tu asistente de IA. Puedes reenviarlas si es necesario.
+                </p>
+                <div class="responses-grid">
+                    {% for response in sent_responses %}
+                        <div class="response-card sent">
+                            <div class="response-header">
+                                <div class="email-info">
+                                    <h4>{{ response.email_intent.email.subject|truncatechars:60 }}</h4>
+                                    <p class="email-meta">
+                                        <strong>Enviado a:</strong> {{ response.email_intent.email.sender }}<br>
+                                        <strong>Fecha de envío:</strong> {{ response.sent_at|date:"d/m/Y H:i" }}<br>
+                                        <strong>Intención:</strong> {{ response.email_intent.get_intent_type_display }}
+                                    </p>
+                                </div>
+                                <div class="response-status">
+                                    <span class="status-badge status-sent">
+                                        <i class="fas fa-check-circle"></i>Enviado
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="response-content">
+                                <h5><i class="fas fa-robot"></i>Respuesta Enviada:</h5>
+                                <div class="response-text">{{ response.response_text }}</div>
+                            </div>
+
+                            <div class="response-actions">
+                                <a href="{% url 'resend_response' response.id %}" class="btn btn-info">
+                                    <i class="fas fa-redo"></i>Reenviar Respuesta
+                                </a>
+                                <button class="btn btn-secondary" onclick="toggleOriginalEmail({{ response.id }})">
+                                    <i class="fas fa-eye"></i>Ver Email Original
+                                </button>
+                            </div>
+
+                            <div id="original-{{ response.id }}" class="original-email" style="display: none;">
+                                <h5><i class="fas fa-envelope-open-text"></i>Email Original:</h5>
+                                <div class="email-content">{{ response.email_intent.email.body_plain|truncatechars:800 }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-paper-plane"></i>
+                    <h3>Sin respuestas enviadas</h3>
+                    <p>Aún no se han enviado respuestas de IA.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Tab Content: Approved Responses -->
+        <div id="content-approved" class="tab-content">
+            {% if approved_responses %}
+                <p style="color: #718096; margin-bottom: 2rem; font-size: 1rem;">
+                    Estas respuestas fueron aprobadas pero aún no se han enviado. Puedes enviarlas manualmente.
+                </p>
+                <div class="responses-grid">
+                    {% for response in approved_responses %}
+                        <div class="response-card approved">
+                            <div class="response-header">
+                                <div class="email-info">
+                                    <h4>{{ response.email_intent.email.subject|truncatechars:60 }}</h4>
+                                    <p class="email-meta">
+                                        <strong>Para:</strong> {{ response.email_intent.email.sender }}<br>
+                                        <strong>Aprobado el:</strong> {{ response.approved_at|date:"d/m/Y H:i" }}<br>
+                                        <strong>Intención:</strong> {{ response.email_intent.get_intent_type_display }}
+                                    </p>
+                                </div>
+                                <div class="response-status">
+                                    <span class="status-badge status-approved">
+                                        <i class="fas fa-check"></i>Aprobado
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="response-content">
+                                <h5><i class="fas fa-robot"></i>Respuesta Aprobada:</h5>
+                                <div class="response-text">{{ response.response_text }}</div>
+                            </div>
+
+                            <div class="response-actions">
+                                <a href="{% url 'approve_response' response.id %}" class="btn btn-success">
+                                    <i class="fas fa-paper-plane"></i>Enviar Ahora
+                                </a>
+                                <button class="btn btn-secondary" onclick="toggleOriginalEmail({{ response.id }})">
+                                    <i class="fas fa-eye"></i>Ver Email Original
+                                </button>
+                            </div>
+
+                            <div id="original-{{ response.id }}" class="original-email" style="display: none;">
+                                <h5><i class="fas fa-envelope-open-text"></i>Email Original:</h5>
+                                <div class="email-content">{{ response.email_intent.email.body_plain|truncatechars:800 }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-check"></i>
+                    <h3>Sin respuestas aprobadas pendientes</h3>
+                    <p>No hay respuestas aprobadas esperando ser enviadas.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Tab Content: Rejected Responses -->
+        <div id="content-rejected" class="tab-content">
+            {% if rejected_responses %}
+                <p style="color: #718096; margin-bottom: 2rem; font-size: 1rem;">
+                    Estas respuestas fueron rechazadas. Puedes revisarlas para entender qué mejorar en la configuración de IA.
+                </p>
+                <div class="responses-grid">
+                    {% for response in rejected_responses %}
+                        <div class="response-card rejected">
+                            <div class="response-header">
+                                <div class="email-info">
+                                    <h4>{{ response.email_intent.email.subject|truncatechars:60 }}</h4>
+                                    <p class="email-meta">
+                                        <strong>De:</strong> {{ response.email_intent.email.sender }}<br>
+                                        <strong>Intención:</strong> {{ response.email_intent.get_intent_type_display }}
+                                        {% if response.user_feedback %}
+                                        <br><strong>Feedback:</strong> {{ response.user_feedback }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="response-status">
+                                    <span class="status-badge status-rejected">
+                                        <i class="fas fa-times"></i>Rechazado
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="response-content">
+                                <h5><i class="fas fa-robot"></i>Respuesta Rechazada:</h5>
+                                <div class="response-text">{{ response.response_text }}</div>
+                            </div>
+
+                            <div class="response-actions">
+                                <button class="btn btn-secondary" onclick="toggleOriginalEmail({{ response.id }})">
+                                    <i class="fas fa-eye"></i>Ver Email Original
+                                </button>
+                            </div>
+
+                            <div id="original-{{ response.id }}" class="original-email" style="display: none;">
+                                <h5><i class="fas fa-envelope-open-text"></i>Email Original:</h5>
+                                <div class="email-content">{{ response.email_intent.email.body_plain|truncatechars:800 }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-times-circle"></i>
+                    <h3>Sin respuestas rechazadas</h3>
+                    <p>No has rechazado ninguna respuesta de IA.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 {% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
+// Tab switching
+function switchTab(tabName) {
+    // Remove active class from all tabs and contents
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+    // Add active class to selected tab and content
+    document.getElementById('tab-' + tabName).classList.add('active');
+    document.getElementById('content-' + tabName).classList.add('active');
+}
+
+// Toggle original email
 function toggleOriginalEmail(responseId) {
     const element = document.getElementById('original-' + responseId);
     if (element.style.display === 'none') {
@@ -532,6 +838,7 @@ function toggleOriginalEmail(responseId) {
     }
 }
 
+// Reject form functions
 function showRejectForm(responseId) {
     document.getElementById('reject-form-' + responseId).style.display = 'block';
     document.getElementById('reject-form-' + responseId).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
