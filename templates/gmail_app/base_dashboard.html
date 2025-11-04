@@ -407,6 +407,11 @@ function confirmDisconnect() {
     }
 }
 
+// Confirm logout function
+function confirmLogout() {
+    return confirm('¿Estás seguro que deseas cerrar sesión?\n\nOtra persona podrá iniciar sesión después.');
+}
+
 // Close sidebar on mobile when clicking outside
 document.addEventListener('click', function(event) {
     const sidebar = document.getElementById('sidebar');

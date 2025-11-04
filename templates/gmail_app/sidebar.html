@@ -40,8 +40,14 @@
         </li>
         <li class="sidebar-item">
             <a href="#" onclick="confirmDisconnect(); return false;" class="sidebar-link">
+                <i class="fas fa-unlink sidebar-icon"></i>
+                <span>Disconnect Gmail</span>
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="{% url 'logout' %}" class="sidebar-link" onclick="return confirmLogout();" style="color: rgba(255, 255, 255, 0.9);">
                 <i class="fas fa-sign-out-alt sidebar-icon"></i>
-                <span>Disconnect</span>
+                <span>Cerrar Sesión</span>
             </a>
         </li>
     </ul>
