@@ -134,7 +134,7 @@ class Command(BaseCommand):
                     if auto_sent > 0:
                         self.stdout.write(
                             self.style.SUCCESS(
-                                f'    └─ ✉️  {auto_sent} respuestas AUTO-ENVIADAS'
+                                f'    └─ {auto_sent} respuestas AUTO-ENVIADAS'
                             )
                         )
                     else:
