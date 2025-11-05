@@ -47,7 +47,7 @@ class GmailAppConfig(AppConfig):
             # Iniciar el scheduler
             scheduler.start()
             logger.info(
-                f'🚀 Scheduler iniciado - Sincronización automática cada {interval_minutes} minutos'
+                f'Scheduler iniciado - Sincronizacion automatica cada {interval_minutes} minutos'
             )
 
             # Detener el scheduler cuando Django se cierre

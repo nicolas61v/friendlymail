@@ -10,9 +10,9 @@ logger = logging.getLogger('gmail_app')
 
 def auto_sync_job():
     """Job que ejecuta la sincronización automática"""
-    logger.info('⏰ Iniciando sincronización automática...')
+    logger.info('Iniciando sincronizacion automatica...')
     try:
         call_command('auto_sync_emails')
-        logger.info('✅ Sincronización automática completada')
+        logger.info('Sincronizacion automatica completada')
     except Exception as e:
-        logger.error(f'❌ Error en sincronización automática: {e}')
+        logger.error(f'Error en sincronizacion automatica: {e}')
