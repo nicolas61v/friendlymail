@@ -538,50 +538,77 @@ def ai_responses(request):
 
 @login_required
 def approve_response(request, response_id):
-    """Approve AI response"""
+    """Approve and send AI response (allows retry for approved responses)"""
     try:
+        # Accept both 'pending_approval' and 'approved' to allow retries
         ai_response = AIResponse.objects.get(
             id=response_id,
-            email_intent__email__gmail_account__user=request.user,
-            status='pending_approval'
+            email_intent__email__gmail_account__user=request.user
         )
-        
-        ai_response.status = 'approved' 
+
+        # Only allow pending or approved (not sent or rejected)
+        if ai_response.status not in ['pending_approval', 'approved']:
+            messages.warning(
+                request,
+                f'Esta respuesta ya fue {ai_response.get_status_display()}. No se puede enviar de nuevo desde aqui.'
+            )
+            return redirect('ai_responses')
+
+        logger.info(f"User {request.user.username} attempting to send response {response_id} (current status: {ai_response.status})")
+
+        # Mark as approved first
+        ai_response.status = 'approved'
         ai_response.approved_at = timezone.now()
         ai_response.save()
-        
-        # Send the email immediately
+
+        # Try to send the email
         try:
+            logger.info(f"Creating Gmail service for user {request.user.username}")
             gmail_service = GmailService(request.user)
+
+            logger.info(f"Attempting to send email to {ai_response.email_intent.email.sender}")
+            logger.info(f"  Subject: {ai_response.response_subject}")
+            logger.info(f"  Reply to: {ai_response.email_intent.email.gmail_id}")
+
             sent_message_id = gmail_service.send_email(
                 to_email=ai_response.email_intent.email.sender,
                 subject=ai_response.response_subject,
                 body=ai_response.response_text,
                 reply_to_message_id=ai_response.email_intent.email.gmail_id
             )
-            
+
+            logger.info(f"Email sent successfully! Message ID: {sent_message_id}")
+
             # Update status to sent
             ai_response.status = 'sent'
             ai_response.sent_at = timezone.now()
             ai_response.save()
-            
-            messages.success(request, f'📧 Response sent successfully to {ai_response.email_intent.email.sender}!')
+
+            messages.success(request, f'Correo enviado exitosamente a {ai_response.email_intent.email.sender}!')
             logger.info(f"Email sent by user {request.user.username} to {ai_response.email_intent.email.sender}")
-            
+
         except Exception as e:
-            logger.error(f"Error sending approved response {response_id}: {e}")
-            messages.error(request, f'❌ Error sending email: {str(e)}. Response is approved but not sent.')
-            
+            error_msg = str(e)
+            logger.error(f"ERROR enviando email (response {response_id}): {error_msg}")
+            logger.exception("Stack trace completo:")  # Esto imprime el stack trace completo
+
+            messages.error(
+                request,
+                f'Error al enviar email: {error_msg}. La respuesta queda aprobada pero no enviada. Puedes intentar reenviarla desde el tab "Aprobadas".'
+            )
+
             # Keep as approved but not sent
             ai_response.status = 'approved'
             ai_response.save()
-        
+
     except AIResponse.DoesNotExist:
-        messages.error(request, '❌ Response not found or already processed')
+        messages.error(request, 'Respuesta no encontrada o no tienes permiso para acceder a ella')
+        logger.warning(f"User {request.user.username} tried to approve non-existent response {response_id}")
     except Exception as e:
-        logger.error(f"Error approving response for user {request.user.username}: {e}")
-        messages.error(request, f'❌ Error approving response: {str(e)}')
-    
+        logger.error(f"Error inesperado aprobando respuesta: {e}")
+        logger.exception("Stack trace:")
+        messages.error(request, f'Error inesperado: {str(e)}')
+
     return redirect('ai_responses')
 
 
