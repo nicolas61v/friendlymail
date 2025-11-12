@@ -11,7 +11,7 @@ from django.conf import settings
 from django.utils import timezone as django_timezone
 from openai import OpenAI
 
-from .ai_models import AIContext, AIRole, TemporalRule, EmailIntent, AIResponse
+from .ai_models import AIRole, TemporalRule, EmailIntent, AIResponse
 from .models import Email
 
 logger = logging.getLogger('gmail_app')
@@ -19,12 +19,12 @@ logger = logging.getLogger('gmail_app')
 
 class AIEmailAnalyzer:
     """AI-powered email analyzer using OpenAI"""
-    
+
     def __init__(self):
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = settings.OPENAI_MODEL
-    
-    def analyze_email_intent(self, email: Email, ai_context: AIContext) -> Dict[str, Any]:
+
+    def analyze_email_intent(self, email: Email, ai_role: AIRole) -> Dict[str, Any]:
         """
         Analyze email intent using AI
         
@@ -41,7 +41,7 @@ class AIEmailAnalyzer:
         
         try:
             # Prepare context for AI
-            system_prompt = self._build_system_prompt(ai_context)
+            system_prompt = self._build_system_prompt(ai_role)
             user_message = self._build_user_message(email)
             
             logger.info(f"Analyzing email intent for: {email.subject[:50]}")
@@ -87,20 +87,20 @@ class AIEmailAnalyzer:
                 'processing_time_ms': processing_time
             }
     
-    def generate_response(self, email: Email, ai_context: AIContext, matched_rule: TemporalRule = None) -> str:
+    def generate_response(self, email: Email, ai_role: AIRole, matched_rule: TemporalRule = None) -> str:
         """
         Generate AI response for an email
-        
+
         Args:
             email: The email to respond to
-            ai_context: User's AI context
+            ai_role: User's AI role
             matched_rule: Specific temporal rule that matched (if any)
-            
+
         Returns:
             Generated response text
         """
         try:
-            system_prompt = self._build_response_system_prompt(ai_context, matched_rule)
+            system_prompt = self._build_response_system_prompt(ai_role, matched_rule)
             user_message = self._build_response_user_message(email)
             
             logger.info(f"Generating response for: {email.subject[:50]}")
@@ -123,18 +123,16 @@ class AIEmailAnalyzer:
         except Exception as e:
             logger.error(f"Error generating AI response: {e}")
             # Fallback response
-            role_name = getattr(ai_context, 'name', None) or getattr(ai_context, 'role', 'AI Assistant')
+            role_name = ai_role.name if ai_role else 'AI Assistant'
             return f"Thank you for your email. I'll get back to you soon.\n\nBest regards,\n{role_name}"
-    
-    def _build_system_prompt(self, ai_context: AIContext) -> str:
+
+    def _build_system_prompt(self, ai_role: AIRole) -> str:
         """Build system prompt for intent analysis"""
 
-        # Get role name (AIRole uses 'name', AIContext uses 'role')
-        role_name = getattr(ai_context, 'name', None) or getattr(ai_context, 'role', 'AI Assistant')
+        role_name = ai_role.name
 
         # Get topics that this role CAN respond to
-        can_respond_topics = ai_context.can_respond_topics.strip() if ai_context.can_respond_topics else ""
-        cannot_respond_topics = ai_context.cannot_respond_topics.strip() if ai_context.cannot_respond_topics else ""
+        can_respond_topics = ai_role.topics.strip() if ai_role.topics else ""
 
         # Build topics section
         topics_section = ""
@@ -146,17 +144,10 @@ THIS ROLE CAN RESPOND TO THESE TOPICS:
 
 Only respond to emails about these topics. If email is NOT about one of these topics, MUST escalate."""
 
-        if cannot_respond_topics:
-            escalate_list = "\n".join([f"  - {t.strip()}" for t in cannot_respond_topics.split('\n') if t.strip()])
-            topics_section += f"""
-
-THIS ROLE MUST ESCALATE THESE TOPICS (do not respond):
-{escalate_list}"""
-
         prompt = f"""You are an AI email analyzer for: {role_name}
 
 CONTEXT:
-{ai_context.context_description}
+{ai_role.system_prompt}
 {topics_section}
 
 IMPORTANT: Check if email is about allowed topics BEFORE deciding to respond.
@@ -192,11 +183,10 @@ CONTENT:
 
 Analyze the intent and decide if this should be automatically responded to or escalated."""
     
-    def _build_response_system_prompt(self, ai_context: AIContext, matched_rule: TemporalRule = None) -> str:
+    def _build_response_system_prompt(self, ai_role: AIRole, matched_rule: TemporalRule = None) -> str:
         """Build system prompt for response generation"""
 
-        # Get role name (AIRole uses 'name', AIContext uses 'role')
-        role_name = getattr(ai_context, 'name', None) or getattr(ai_context, 'role', 'AI Assistant')
+        role_name = ai_role.name
 
         rule_info = ""
         if matched_rule:
@@ -209,7 +199,7 @@ RULE TEMPLATE: {matched_rule.response_template}
         return f"""You are an AI assistant responding to emails on behalf of:
 
 ROLE: {role_name}
-CONTEXT: {ai_context.context_description}
+CONTEXT: {ai_role.system_prompt}
 
 {rule_info}
 
@@ -247,8 +237,6 @@ class EmailAIProcessor:
         """
         Process a single email through the AI pipeline
 
-        Uses the currently active AIRole if available, falls back to AIContext for backward compatibility.
-
         Returns:
             Tuple of (EmailIntent, AIResponse or None)
         """
@@ -258,28 +246,24 @@ class EmailAIProcessor:
             # Get user (support both email_account and legacy gmail_account)
             user = email.email_account.user if email.email_account else email.gmail_account.user
 
-            # Try to get active AIRole (new system)
-            ai_context = AIRole.get_active_role(user)
+            # Get active AIRole
+            ai_role = AIRole.objects.get(user=user, is_active=True)
+            logger.info(f"Using AIRole: {ai_role.name} for user {user.username}")
 
-            if ai_context is None:
-                raise AIContext.DoesNotExist("No active AI role or context")
-
-            logger.info(f"Using {'AIRole' if isinstance(ai_context, AIRole) else 'AIContext'} for user {user.username}")
-
-        except (AIContext.DoesNotExist, AIRole.DoesNotExist):
-            logger.warning(f"No active AI role or context for user {user.username}")
+        except AIRole.DoesNotExist:
+            logger.warning(f"No active AI role configured for user {user.username}")
             # Create basic intent for unprocessed email
             intent = EmailIntent.objects.create(
                 email=email,
                 intent_type='unclear',
                 confidence_score=0.0,
                 ai_decision='escalate',
-                decision_reason='No AI role or context configured',
+                decision_reason='No active AI role configured',
                 processing_time_ms=0
             )
             return intent, None
         except Exception as e:
-            logger.error(f"Error getting AI context for email {email.id}: {e}")
+            logger.error(f"Error getting AI role for email {email.id}: {e}")
             intent = EmailIntent.objects.create(
                 email=email,
                 intent_type='unclear',
@@ -289,29 +273,12 @@ class EmailAIProcessor:
                 processing_time_ms=0
             )
             return intent, None
-        
-        # Check if email domain is allowed
-        if ai_context.allowed_domains:
-            allowed_domains = [d.strip() for d in ai_context.allowed_domains.split('\n') if d.strip()]
-            sender_domain = email.sender.split('@')[-1] if '@' in email.sender else ''
-            
-            if not any(domain.replace('@', '') in sender_domain for domain in allowed_domains):
-                logger.info(f"Email from {email.sender} not in allowed domains, escalating")
-                intent = EmailIntent.objects.create(
-                    email=email,
-                    intent_type='administrative',
-                    confidence_score=1.0,
-                    ai_decision='escalate',
-                    decision_reason='Sender domain not in allowed list',
-                    processing_time_ms=0
-                )
-                return intent, None
-        
+
         # Analyze email intent
-        analysis = self.analyzer.analyze_email_intent(email, ai_context)
-        
+        analysis = self.analyzer.analyze_email_intent(email, ai_role)
+
         # Check for matching temporal rules
-        matched_rule = self._find_matching_rule(email, ai_context, analysis)
+        matched_rule = self._find_matching_rule(email, ai_role, analysis)
         
         # Create EmailIntent record
         intent = EmailIntent.objects.create(
@@ -328,7 +295,7 @@ class EmailAIProcessor:
         ai_response = None
         if analysis['decision'] == 'respond':
             try:
-                response_text = self.analyzer.generate_response(email, ai_context, matched_rule)
+                response_text = self.analyzer.generate_response(email, ai_role, matched_rule)
                 
                 # Create AIResponse record
                 # Always create as 'pending_approval' first
@@ -347,31 +314,19 @@ class EmailAIProcessor:
         
         return intent, ai_response
     
-    def _find_matching_rule(self, email: Email, ai_context, analysis: Dict) -> TemporalRule:
+    def _find_matching_rule(self, email: Email, ai_role: AIRole, analysis: Dict) -> TemporalRule:
         """
         Find matching temporal rule for the email.
-
-        Supports both AIRole and AIContext (backward compatibility).
         """
 
         now = django_timezone.now()
 
-        # Build query based on context type (AIRole or AIContext)
-        if isinstance(ai_context, AIRole):
-            active_rules = TemporalRule.objects.filter(
-                ai_role=ai_context,
-                status='active',
-                start_date__lte=now,
-                end_date__gte=now
-            ).order_by('-priority')
-        else:
-            # Legacy AIContext
-            active_rules = TemporalRule.objects.filter(
-                ai_context=ai_context,
-                status='active',
-                start_date__lte=now,
-                end_date__gte=now
-            ).order_by('-priority')
+        active_rules = TemporalRule.objects.filter(
+            ai_role=ai_role,
+            status='active',
+            start_date__lte=now,
+            end_date__gte=now
+        ).order_by('-priority')
 
         for rule in active_rules:
             # Check if email content matches rule keywords
