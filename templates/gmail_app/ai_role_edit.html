@@ -2,8 +2,8 @@
 
 {% block title %}Edit AI Role - FriendlyMail{% endblock %}
 
-{% block page_icon %}<i class="fas fa-edit" style="color: #9c27b0; margin-right: 0.5rem;"></i>{% endblock %}
-{% block page_title %}Configure AI Role: {{ role.name }}{% endblock %}
+{% block page_icon %}<i class="fas fa-cog" style="color: #6366f1; margin-right: 0.5rem;"></i>{% endblock %}
+{% block page_title %}Edit Role: {{ role.name }}{% endblock %}
 
 {% block extra_styles %}
 .tabs-container {
@@ -36,8 +36,8 @@
 }
 
 .tab-button.active {
-    color: #9c27b0;
-    border-bottom-color: #9c27b0;
+    color: #6366f1;
+    border-bottom-color: #6366f1;
 }
 
 .tab-content {
@@ -155,13 +155,13 @@
 }
 
 .role-status.active {
-    background: #c8e6c9;
-    border-left: 4px solid #4caf50;
+    background: #dcfce7;
+    border-left: 4px solid #16a34a;
 }
 
 .role-status.inactive {
-    background: #ffccbc;
-    border-left: 4px solid #ff7043;
+    background: #f3f4f6;
+    border-left: 4px solid #9ca3af;
 }
 
 .role-status-info {
@@ -268,13 +268,13 @@
 }
 
 .status-badge.active {
-    background: #c8e6c9;
-    color: #1b5e20;
+    background: #dcfce7;
+    color: #166534;
 }
 
 .status-badge.draft {
-    background: #fff3e0;
-    color: #e65100;
+    background: #fef3c7;
+    color: #92400e;
 }
 
 .form-actions {
@@ -301,7 +301,7 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
     color: white;
     min-width: 150px;
     justify-content: center;
@@ -309,7 +309,7 @@
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(156, 39, 176, 0.3);
+    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
 }
 
 .btn-secondary {
@@ -338,7 +338,7 @@
 }
 
 .breadcrumb a {
-    color: #9c27b0;
+    color: #6366f1;
     text-decoration: none;
 }
 
@@ -412,12 +412,12 @@
     <div class="role-status-info">
         <strong>{{ role.name }}</strong>
         {% if is_active_role %}
-        <span class="role-status-badge" style="background: #4caf50; color: white;">✓ ACTIVE ROLE</span>
+        <span class="role-status-badge" style="background: #16a34a; color: white;">Active</span>
         {% else %}
-        <span class="role-status-badge" style="background: #ff7043; color: white;">Inactive</span>
+        <span class="role-status-badge" style="background: #9ca3af; color: white;">Inactive</span>
         {% endif %}
-        <p style="margin: 0.5rem 0 0 0; color: #555; font-size: 0.9rem;">
-            Last updated: {{ role.updated_at|date:"M d, Y g:i A" }}
+        <p style="margin: 0.5rem 0 0 0; color: #666; font-size: 0.9rem;">
+            Updated: {{ role.updated_at|date:"M d, Y" }}
         </p>
     </div>
 </div>
@@ -426,10 +426,10 @@
 <div class="tabs-container">
     <div class="tabs">
         <button class="tab-button active" data-tab="configuration">
-            <i class="fas fa-sliders-h"></i> Configuration
+            <i class="fas fa-cog"></i> Configuration
         </button>
         <button class="tab-button" data-tab="temporal-rules">
-            <i class="fas fa-clock"></i> Temporal Rules
+            <i class="fas fa-hourglass-half"></i> Temporal Rules
         </button>
     </div>
 </div>
@@ -444,7 +444,7 @@
 
             <!-- Role Details -->
             <div class="form-section">
-                <h3><i class="fas fa-info-circle"></i> Role Details</h3>
+                <h3>Role Details</h3>
 
                 <div class="form-group">
                     <label>Role Name</label>
@@ -461,7 +461,7 @@
 
             <!-- Settings -->
             <div class="form-section">
-                <h3><i class="fas fa-cog"></i> Settings</h3>
+                <h3>Settings</h3>
 
                 <div class="form-group">
                     <label for="complexity_level">Complexity Level</label>
@@ -474,16 +474,14 @@
 
                 <div class="checkbox-group">
                     <input type="checkbox" id="auto_send" name="auto_send" {% if role.auto_send %}checked{% endif %}>
-                    <label for="auto_send">
-                        <i class="fas fa-paper-plane"></i> Enable Auto-send for this role
-                    </label>
+                    <label for="auto_send">Enable Auto-send for this role</label>
                 </div>
-                <small style="display: block; margin-left: 1.5rem;">If enabled, responses will be sent automatically without waiting for approval.</small>
+                <small style="display: block; margin-left: 1.5rem;">Responses will be sent automatically without approval when enabled.</small>
             </div>
 
             <!-- Response Topics -->
             <div class="form-section">
-                <h3><i class="fas fa-check-circle"></i> What This Role Can Respond To</h3>
+                <h3>What This Role Can Respond To</h3>
 
                 <div class="form-group">
                     <label for="can_respond_topics">Topics This Role Responds To</label>
@@ -500,7 +498,7 @@
 
             <!-- Filtering -->
             <div class="form-section">
-                <h3><i class="fas fa-filter"></i> Email Filtering</h3>
+                <h3>Email Filtering</h3>
 
                 <div class="form-group">
                     <label for="allowed_domains">Allowed Domains (Optional)</label>
@@ -511,14 +509,8 @@
 
             <!-- Form Actions -->
             <div class="form-actions">
-                <a href="{% url 'ai_roles_list' %}" class="btn btn-secondary">
-                    <i class="fas fa-times"></i>
-                    Cancel
-                </a>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i>
-                    Save Configuration
-                </button>
+                <a href="{% url 'ai_roles_list' %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
             </div>
         </form>
     </div>
@@ -527,18 +519,14 @@
 <!-- TEMPORAL RULES TAB -->
 <div id="temporal-rules" class="tab-content">
     <div class="form-card">
-        <h2 style="color: #2d3748; margin-top: 0;">
-            <i class="fas fa-clock"></i> Temporal Rules
-        </h2>
+        <h2 style="color: #2d3748; margin-top: 0;">Temporal Rules</h2>
         <p style="color: #718096; margin-bottom: 1.5rem;">
-            Create time-based rules for specific responses during particular periods (e.g., "Exam Info" from Nov 1-15).
+            Create time-based response templates for specific keywords and date ranges.
         </p>
 
         <!-- Create New Rule Form -->
         <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-            <h3 style="margin-top: 0; color: #2d3748;">
-                <i class="fas fa-plus-circle"></i> Create New Temporal Rule
-            </h3>
+            <h3 style="margin-top: 0; color: #2d3748;">Create New Rule</h3>
 
             <form method="POST" action="{% url 'ai_role_temporal_rule_save' role.id %}">
                 {% csrf_token %}
@@ -598,10 +586,7 @@
                 </div>
 
                 <div style="display: flex; gap: 1rem;">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-plus"></i>
-                        Add Temporal Rule
-                    </button>
+                    <button type="submit" class="btn btn-success">Add Rule</button>
                 </div>
             </form>
         </div>
@@ -621,11 +606,11 @@
                         <div class="rule-meta">
                             <span class="rule-meta-item">
                                 <i class="fas fa-calendar"></i>
-                                {{ rule.start_date|date:"M d" }} - {{ rule.end_date|date:"M d, Y" }}
+                                {{ rule.start_date|date:"M d" }} – {{ rule.end_date|date:"M d, Y" }}
                             </span>
                             <span class="rule-meta-item">
-                                <i class="fas fa-star"></i>
-                                Priority: {{ rule.priority }}
+                                <i class="fas fa-arrow-up"></i>
+                                Priority {{ rule.priority }}
                             </span>
                             <span class="status-badge {% if rule.status == 'active' %}active{% else %}draft{% endif %}">
                                 {{ rule.get_status_display }}
@@ -648,7 +633,7 @@
                     <form method="POST" action="{% url 'ai_role_temporal_rule_delete' role.id rule.id %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="rule-btn rule-btn-danger" onclick="return confirm('Delete this rule?');">
-                            <i class="fas fa-trash"></i> Delete
+                            <i class="fas fa-trash"></i> Remove
                         </button>
                     </form>
                 </div>
@@ -657,8 +642,8 @@
         </div>
         {% else %}
         <div class="no-rules">
-            <i class="fas fa-inbox"></i>
-            <p>No temporal rules yet. Create one above to get started.</p>
+            <i class="fas fa-hourglass-end"></i>
+            <p>No rules created yet. Add your first rule above.</p>
         </div>
         {% endif %}
     </div>

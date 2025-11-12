@@ -2,8 +2,8 @@
 
 {% block title %}Create AI Role - FriendlyMail{% endblock %}
 
-{% block page_icon %}<i class="fas fa-plus-circle" style="color: #9c27b0; margin-right: 0.5rem;"></i>{% endblock %}
-{% block page_title %}Create New AI Role{% endblock %}
+{% block page_icon %}<i class="fas fa-plus" style="color: #6366f1; margin-right: 0.5rem;"></i>{% endblock %}
+{% block page_title %}Create New Role{% endblock %}
 
 {% block extra_styles %}
 .form-card {
@@ -80,12 +80,12 @@
 }
 
 .form-hint {
-    background: #f0f4ff;
-    border-left: 4px solid #9c27b0;
+    background: #eef2ff;
+    border-left: 4px solid #6366f1;
     padding: 1rem;
     border-radius: 4px;
     margin-top: 0.75rem;
-    color: #5e35b1;
+    color: #4f46e5;
     font-size: 0.9rem;
 }
 
@@ -128,7 +128,7 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
     color: white;
     min-width: 150px;
     justify-content: center;
@@ -136,7 +136,7 @@
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(156, 39, 176, 0.3);
+    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
 }
 
 .btn-secondary {
@@ -181,7 +181,7 @@
 }
 
 .breadcrumb a {
-    color: #9c27b0;
+    color: #6366f1;
     text-decoration: none;
 }
 
@@ -204,7 +204,7 @@
 }
 
 .step.active {
-    color: #9c27b0;
+    color: #6366f1;
     font-weight: 600;
 }
 
@@ -222,8 +222,8 @@
 }
 
 .step.active::before {
-    background: #9c27b0;
-    border-color: #9c27b0;
+    background: #6366f1;
+    border-color: #6366f1;
     color: white;
 }
 
@@ -270,11 +270,9 @@
 </div>
 
 <div class="form-card">
-    <h2 style="color: #2d3748; margin-top: 0;">
-        <i class="fas fa-theater-masks"></i> Create New AI Role
-    </h2>
+    <h2 style="color: #2d3748; margin-top: 0;">Create New Role</h2>
     <p style="color: #718096; margin-bottom: 2rem;">
-        Define a new AI role with its own configuration, rules, and auto-send settings.
+        Set up a new role with independent configuration for topics, rules, and auto-send behavior.
     </p>
 
     <form method="POST">
@@ -282,19 +280,19 @@
 
         <!-- Basic Information -->
         <div class="form-section">
-            <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
+            <h3>Basic Information</h3>
 
             <div class="form-group">
                 <label for="name">Role Name *</label>
                 <input type="text" id="name" name="name" placeholder="e.g., Professor, Coordinator, Director" required>
-                <small>Choose a descriptive name for this role. You'll use this to identify and switch between roles.</small>
+                <small>Choose a descriptive name. This cannot be changed after creation.</small>
                 <div class="example-box">
                     <h4>Examples:</h4>
                     <ul>
-                        <li>👨‍🏫 Professor</li>
-                        <li>👨‍💼 Coordinator</li>
-                        <li>👔 Director</li>
-                        <li>💻 Tech Support Manager</li>
+                        <li>Professor</li>
+                        <li>Coordinator</li>
+                        <li>Director</li>
+                        <li>Tech Support Manager</li>
                     </ul>
                 </div>
             </div>
@@ -314,7 +312,7 @@
 
         <!-- Complexity & Settings -->
         <div class="form-section">
-            <h3><i class="fas fa-sliders-h"></i> Configuration Level</h3>
+            <h3>Configuration Level</h3>
 
             <div class="form-group">
                 <label for="complexity_level">Complexity Level</label>
@@ -337,7 +335,7 @@
 
         <!-- Responsive Topics -->
         <div class="form-section">
-            <h3><i class="fas fa-check-circle"></i> Topics This Role Can Respond To</h3>
+            <h3>Topics This Role Can Respond To</h3>
 
             <div class="form-group">
                 <label for="can_respond_topics">Response Topics</label>
@@ -373,7 +371,7 @@
 
         <!-- Filtering -->
         <div class="form-section">
-            <h3><i class="fas fa-filter"></i> Email Filtering</h3>
+            <h3>Email Filtering</h3>
 
             <div class="form-group">
                 <label for="allowed_domains">Allowed Domains (Optional)</label>
@@ -392,25 +390,17 @@
 
         <!-- Form Actions -->
         <div class="form-actions">
-            <a href="{% url 'ai_roles_list' %}" class="btn btn-secondary">
-                <i class="fas fa-times"></i>
-                Cancel
-            </a>
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-plus"></i>
-                Create Role
-            </button>
+            <a href="{% url 'ai_roles_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Create Role</button>
         </div>
     </form>
 </div>
 
 <!-- Info Section -->
-<div style="margin-top: 3rem; padding: 2rem; background: #f0f4ff; border-radius: 12px; border-left: 4px solid #9c27b0; text-align: center;">
-    <h3 style="color: #5e35b1; margin-top: 0;">
-        <i class="fas fa-lightbulb"></i> Tip
-    </h3>
-    <p style="color: #6a5acd; margin: 0;">
-        You can edit this role's configuration after creation, including adding temporal rules (time-based responses like "Exam Info from Nov 1-15").
+<div style="margin-top: 3rem; padding: 2rem; background: #eef2ff; border-radius: 12px; border-left: 4px solid #6366f1; text-align: center;">
+    <h3 style="color: #4f46e5; margin-top: 0;">Tip</h3>
+    <p style="color: #4f46e5; margin: 0;">
+        After creating this role, you can add temporal rules for time-based responses and adjust all settings.
     </p>
 </div>
 {% endblock %}
