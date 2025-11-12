@@ -123,28 +123,59 @@ class AIEmailAnalyzer:
         except Exception as e:
             logger.error(f"Error generating AI response: {e}")
             # Fallback response
-            return f"Thank you for your email. I'll get back to you soon.\n\nBest regards,\n{ai_context.role}"
+            role_name = getattr(ai_context, 'name', None) or getattr(ai_context, 'role', 'AI Assistant')
+            return f"Thank you for your email. I'll get back to you soon.\n\nBest regards,\n{role_name}"
     
     def _build_system_prompt(self, ai_context: AIContext) -> str:
         """Build system prompt for intent analysis"""
-        
-        prompt = f"""You are an AI that analyzes emails for a professor.
 
-PROFESSOR CONTEXT:
-Role: {ai_context.role}
-Description: {ai_context.context_description}
+        # Get role name (AIRole uses 'name', AIContext uses 'role')
+        role_name = getattr(ai_context, 'name', None) or getattr(ai_context, 'role', 'AI Assistant')
 
-ANALYZE each email and return ONLY valid JSON:
+        # Get topics that this role CAN respond to
+        can_respond_topics = ai_context.can_respond_topics.strip() if ai_context.can_respond_topics else ""
+        cannot_respond_topics = ai_context.cannot_respond_topics.strip() if ai_context.cannot_respond_topics else ""
 
-For questions about exams, schedules, assignments - decision should be "respond"
-For personal matters, grades, complex issues - decision should be "escalate"
+        # Build topics section
+        topics_section = ""
+        if can_respond_topics:
+            topics_list = "\n".join([f"  - {t.strip()}" for t in can_respond_topics.split('\n') if t.strip()])
+            topics_section += f"""
+THIS ROLE CAN RESPOND TO THESE TOPICS:
+{topics_list}
 
-EXAMPLE OUTPUT:
-{{"intent_type": "exam_info", "confidence": 0.9, "decision": "respond", "reason": "Student asking about exam date"}}
+Only respond to emails about these topics. If email is NOT about one of these topics, MUST escalate."""
 
-INTENT OPTIONS: exam_info, schedule_inquiry, academic_question, personal_matter, administrative, unclear
-DECISION OPTIONS: respond, escalate, ignore"""
-        
+        if cannot_respond_topics:
+            escalate_list = "\n".join([f"  - {t.strip()}" for t in cannot_respond_topics.split('\n') if t.strip()])
+            topics_section += f"""
+
+THIS ROLE MUST ESCALATE THESE TOPICS (do not respond):
+{escalate_list}"""
+
+        prompt = f"""You are an AI email analyzer for: {role_name}
+
+CONTEXT:
+{ai_context.context_description}
+{topics_section}
+
+IMPORTANT: Check if email is about allowed topics BEFORE deciding to respond.
+If the email topic is NOT in the list of topics this role can respond to, you MUST escalate.
+
+Return ONLY valid JSON with these fields:
+- intent_type: Type of email (exam_info, schedule_inquiry, academic_question, personal_matter, administrative, unclear)
+- confidence: Your confidence level (0.0 to 1.0)
+- decision: Either "respond" (if topic is allowed), "escalate" (if topic not allowed or sensitive), or "ignore" (if spam)
+- reason: Brief explanation of your decision
+
+EXAMPLE:
+{{"intent_type": "exam_info", "confidence": 0.9, "decision": "respond", "reason": "Student asking about exam dates - this is in allowed topics"}}
+
+CRITICAL RULES:
+1. If email is about a topic NOT in the allowed list → decision MUST be "escalate"
+2. If email is about a topic in the "must escalate" list → decision MUST be "escalate"
+3. Only decide "respond" if topic matches allowed topics AND confidence > 0.7"""
+
         return prompt
     
     def _build_user_message(self, email: Email) -> str:
