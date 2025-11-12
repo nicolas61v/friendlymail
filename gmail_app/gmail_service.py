@@ -180,7 +180,18 @@ class GmailService:
             return self.service
         return None
     
-    def sync_emails(self, max_results=20):
+    def sync_emails(self, max_results=20, email_account_id=None):
+        """
+        Sync emails from Gmail API
+
+        Args:
+            max_results (int): Maximum number of emails to fetch (default: 20)
+            email_account_id (int): Specific EmailAccount ID to sync. If None, syncs the first active account.
+                                   This enables multiple Gmail accounts to be synced.
+
+        Returns:
+            list: List of newly created Email objects
+        """
         logger.info(f"Starting email sync for user {self.user.username}")
 
         try:
@@ -188,22 +199,34 @@ class GmailService:
             if not service:
                 raise OAuthError("Unable to connect to Gmail service. Please reconnect your account.")
 
-            # Get active Gmail account (using new unified EmailAccount model)
-            email_account = EmailAccount.objects.filter(
-                user=self.user,
-                provider='gmail',
-                is_active=True
-            ).first()
+            # Get the specific email account to sync
+            if email_account_id:
+                email_account = EmailAccount.objects.get(
+                    id=email_account_id,
+                    user=self.user,
+                    provider='gmail',
+                    is_active=True
+                )
+                logger.info(f"Syncing specific Gmail account: {email_account.email}")
+            else:
+                # Get first active Gmail account for backward compatibility
+                email_account = EmailAccount.objects.filter(
+                    user=self.user,
+                    provider='gmail',
+                    is_active=True
+                ).first()
 
             if not email_account:
                 raise OAuthError("No active Gmail account found. Please reconnect your account.")
-            
+
             # Get messages
             results = service.users().messages().list(
-                userId='me', 
+                userId='me',
                 maxResults=max_results,
                 q='in:inbox'
             ).execute()
+        except EmailAccount.DoesNotExist:
+            raise OAuthError(f"Gmail account with ID {email_account_id} not found.")
         except HttpError as e:
             logger.error(f"Gmail API error during sync for user {self.user.username}: {e}")
             if e.resp.status == 403:
@@ -224,34 +247,34 @@ class GmailService:
                     status_code=e.resp.status,
                     error_details=str(e)
                 )
-        
+
         messages = results.get('messages', [])
         synced_emails = []
-        
+
         for message in messages:
             msg = service.users().messages().get(
-                userId='me', 
+                userId='me',
                 id=message['id'],
                 format='full'
             ).execute()
-            
+
             # Extract email data
             headers = msg['payload'].get('headers', [])
             subject = next((h['value'] for h in headers if h['name'] == 'Subject'), 'No Subject')
             sender = next((h['value'] for h in headers if h['name'] == 'From'), 'Unknown')
             to = next((h['value'] for h in headers if h['name'] == 'To'), 'Unknown')
             date_str = next((h['value'] for h in headers if h['name'] == 'Date'), '')
-            
+
             # Parse date
             try:
                 received_date = datetime.strptime(date_str.split(' (')[0], '%a, %d %b %Y %H:%M:%S %z')
             except:
                 received_date = datetime.now(timezone.utc)
-            
+
             # Extract body
             body_plain = ''
             body_html = ''
-            
+
             def extract_body(payload):
                 nonlocal body_plain, body_html
                 if 'parts' in payload:
@@ -266,7 +289,7 @@ class GmailService:
                         data = payload['body'].get('data', '')
                         if data:
                             body_html = base64.urlsafe_b64decode(data).decode('utf-8')
-            
+
             extract_body(msg['payload'])
 
             # Save email to database (using new unified model)
@@ -284,10 +307,12 @@ class GmailService:
                     'is_read': 'UNREAD' not in msg['labelIds']
                 }
             )
-            
+
             if created:
                 synced_emails.append(email)
-        
+                logger.info(f"New email synced from {email_account.email}: {subject[:50]}")
+
+        logger.info(f"Sync complete for {email_account.email}: {len(synced_emails)} new emails")
         return synced_emails
     
     def send_email(self, to_email: str, subject: str, body: str, reply_to_message_id: str = None):

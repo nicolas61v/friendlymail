@@ -328,11 +328,23 @@ def sync_emails_api(request):
 @login_required
 def email_detail(request, email_id):
     try:
-        email = Email.objects.get(id=email_id, gmail_account__user=request.user)
-        return render(request, 'gmail_app/email_detail.html', {'email': email})
+        # Support both new (email_account) and legacy (gmail_account) models
+        email = Email.objects.get(
+            id=email_id,
+            email_account__user=request.user
+        )
     except Email.DoesNotExist:
-        messages.error(request, 'Email not found')
-        return redirect('dashboard')
+        # Fallback to legacy model for backward compatibility
+        try:
+            email = Email.objects.get(
+                id=email_id,
+                gmail_account__user=request.user
+            )
+        except Email.DoesNotExist:
+            messages.error(request, 'Email not found')
+            return redirect('dashboard')
+
+    return render(request, 'gmail_app/email_detail.html', {'email': email})
 
 
 @login_required
@@ -1071,14 +1083,13 @@ def sync_all_accounts(request):
         total_updated = 0
         errors = []
         
-        # Sync Gmail accounts
+        # Sync Gmail accounts (now supports multiple accounts!)
         gmail_accounts = email_accounts.filter(provider='gmail')
         for account in gmail_accounts:
             try:
                 gmail_service = GmailService(request.user)
-                # Note: GmailService needs to be updated to support multiple accounts
-                # For now, this will only sync the first Gmail account
-                synced_emails = gmail_service.sync_emails()
+                # Now syncs specific Gmail account by ID (supports multiple)
+                synced_emails = gmail_service.sync_emails(email_account_id=account.id)
                 count = len(synced_emails) if synced_emails else 0
                 total_synced += count
                 total_new += count
