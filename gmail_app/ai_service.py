@@ -275,11 +275,13 @@ class EmailAIProcessor:
                 response_text = self.analyzer.generate_response(email, ai_context, matched_rule)
                 
                 # Create AIResponse record
+                # Always create as 'pending_approval' first
+                # The scheduler will decide to send automatically if auto_send is enabled
                 ai_response = AIResponse.objects.create(
                     email_intent=intent,
                     response_text=response_text,
                     response_subject=f"Re: {email.subject}",
-                    status='pending_approval' if not ai_context.auto_send else 'approved'
+                    status='pending_approval'
                 )
                 
                 logger.info(f"Response generated for email: {email.subject[:50]}")

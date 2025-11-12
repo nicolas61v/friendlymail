@@ -103,7 +103,7 @@ class Command(BaseCommand):
                                         to_email=ai_response.email_intent.email.sender,
                                         subject=ai_response.response_subject,
                                         body=ai_response.response_text,
-                                        reply_to_message_id=ai_response.email_intent.email.gmail_id
+                                        reply_to_message_id=ai_response.email_intent.email.provider_id
                                     )
 
                                     # Marcar como enviado
