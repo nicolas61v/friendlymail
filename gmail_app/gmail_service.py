@@ -10,7 +10,7 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.auth.exceptions import RefreshError
-from .models import GmailAccount, Email
+from .models import GmailAccount, EmailAccount, Email
 from .exceptions import (
     OAuthError, TokenExpiredError, RefreshTokenInvalidError,
     GmailAPIError, QuotaExceededError, PermissionError
@@ -166,13 +166,21 @@ class GmailService:
     
     def sync_emails(self, max_results=20):
         logger.info(f"Starting email sync for user {self.user.username}")
-        
+
         try:
             service = self.get_service()
             if not service:
                 raise OAuthError("Unable to connect to Gmail service. Please reconnect your account.")
-            
-            gmail_account = GmailAccount.objects.get(user=self.user)
+
+            # Get active Gmail account (using new unified EmailAccount model)
+            email_account = EmailAccount.objects.filter(
+                user=self.user,
+                provider='gmail',
+                is_active=True
+            ).first()
+
+            if not email_account:
+                raise OAuthError("No active Gmail account found. Please reconnect your account.")
             
             # Get messages
             results = service.users().messages().list(
@@ -244,12 +252,12 @@ class GmailService:
                             body_html = base64.urlsafe_b64decode(data).decode('utf-8')
             
             extract_body(msg['payload'])
-            
-            # Save email to database
+
+            # Save email to database (using new unified model)
             email, created = Email.objects.update_or_create(
-                gmail_id=msg['id'],
+                email_account=email_account,
+                provider_id=msg['id'],
                 defaults={
-                    'gmail_account': gmail_account,
                     'thread_id': msg['threadId'],
                     'subject': subject,
                     'sender': sender,
