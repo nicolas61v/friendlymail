@@ -51,5 +51,4 @@ urlpatterns = [
     path('response/edit/<int:response_id>/', views.edit_response, name='edit_response'),
     path('api/emails-ai-status/', views.get_all_emails_with_ai_status, name='get_all_emails_with_ai_status'),
     path('process-existing-emails/', views.process_existing_emails, name='process_existing_emails'),
-    path('debug/ai-status/', views.debug_ai_status, name='debug_ai_status'),
 ]

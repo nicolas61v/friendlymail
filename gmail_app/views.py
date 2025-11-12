@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.utils import timezone
 from django.conf import settings
+from django.db.models import Q
 from .gmail_service import GmailService
 from .outlook_service import OutlookService
 from .models import Email, EmailAccount, GmailAccount
@@ -436,8 +437,6 @@ def clear_oauth_session(request):
 @login_required
 def ai_responses(request):
     """View and manage AI responses"""
-    from django.db.models import Q
-
     try:
         # Get active AI role
         ai_role = AIRole.objects.get(user=request.user, is_active=True)
@@ -696,168 +695,59 @@ def resend_response(request, response_id):
 def process_existing_emails(request):
     """Process existing emails with AI"""
     try:
-        ai_context = AIContext.objects.get(user=request.user, is_active=True)
-        
+        # Get active AIRole
+        ai_role = AIRole.objects.get(user=request.user, is_active=True)
+
         # Get emails that haven't been processed by AI yet
         unprocessed_emails = Email.objects.filter(
-            gmail_account__user=request.user
+            Q(email_account__user=request.user) | Q(gmail_account__user=request.user)
         ).exclude(
             id__in=EmailIntent.objects.values('email_id')
         )[:10]  # Process max 10 emails at once to avoid timeout
-        
+
         if not unprocessed_emails:
             messages.info(request, 'ℹ️ No unprocessed emails found. All emails have been analyzed by AI.')
             return redirect('ai_responses')
-        
+
         ai_processor = EmailAIProcessor()
         processed_count = 0
         responses_generated = 0
-        
+
         logger.info(f"Processing {len(unprocessed_emails)} existing emails for user {request.user.username}")
-        
+
         for email in unprocessed_emails:
             try:
                 intent, ai_response = ai_processor.process_email(email)
                 processed_count += 1
-                
+
                 if ai_response:
                     responses_generated += 1
-                    
+
             except Exception as e:
                 logger.error(f"Error processing existing email {email.id} with AI: {e}")
-        
+
         if responses_generated > 0:
-            messages.success(request, 
+            messages.success(request,
                 f'🤖 Processed {processed_count} existing emails! AI generated {responses_generated} responses.')
-            messages.info(request, 
+            messages.info(request,
                 f'📤 {responses_generated} responses are pending your approval.')
         else:
-            messages.success(request, 
+            messages.success(request,
                 f'🤖 Analyzed {processed_count} existing emails. None required responses.')
-        
+
         if len(unprocessed_emails) == 10:
-            messages.info(request, 
+            messages.info(request,
                 f'💡 There might be more emails to process. Click "Process More" to continue.')
-            
-    except AIContext.DoesNotExist:
-        messages.error(request, '⚠️ Please configure your AI context first.')
-        return redirect('ai_config')
+
+    except AIRole.DoesNotExist:
+        messages.error(request, '⚠️ Please create an active AI role first.')
+        return redirect('ai_roles_list')
     except Exception as e:
         logger.error(f"Error processing existing emails for user {request.user.username}: {e}")
         messages.error(request, f'❌ Error processing emails: {str(e)}')
-    
+
     return redirect('ai_responses')
 
-
-@login_required
-def debug_ai_status(request):
-    """Debug AI configuration and status"""
-    try:
-        # Check AI Context
-        try:
-            ai_context = AIContext.objects.get(user=request.user)
-            ai_context_info = {
-                'exists': True,
-                'is_active': ai_context.is_active,
-                'role': ai_context.role,
-                'has_description': bool(ai_context.context_description),
-                'complexity_level': ai_context.complexity_level,
-                'auto_send': ai_context.auto_send,
-            }
-        except AIContext.DoesNotExist:
-            ai_context_info = {'exists': False}
-
-        # Check Gmail connection
-        try:
-            gmail_account = GmailAccount.objects.get(user=request.user)
-            gmail_info = {
-                'connected': True,
-                'email': gmail_account.email,
-                'has_refresh_token': bool(gmail_account.refresh_token),
-            }
-        except GmailAccount.DoesNotExist:
-            gmail_info = {'connected': False}
-
-        # Check emails
-        total_emails = Email.objects.filter(gmail_account__user=request.user).count()
-        processed_emails = EmailIntent.objects.filter(email__gmail_account__user=request.user).count()
-
-        # Check responses by status
-        pending_count = AIResponse.objects.filter(
-            email_intent__email__gmail_account__user=request.user,
-            status='pending_approval'
-        ).count()
-
-        sent_count = AIResponse.objects.filter(
-            email_intent__email__gmail_account__user=request.user,
-            status='sent'
-        ).count()
-
-        approved_count = AIResponse.objects.filter(
-            email_intent__email__gmail_account__user=request.user,
-            status='approved'
-        ).count()
-
-        rejected_count = AIResponse.objects.filter(
-            email_intent__email__gmail_account__user=request.user,
-            status='rejected'
-        ).count()
-
-        # Check temporal rules
-        temporal_rules = TemporalRule.objects.filter(ai_context__user=request.user).count()
-
-        # Check scheduler status
-        from django.conf import settings
-        scheduler_enabled = getattr(settings, 'SCHEDULER_AUTOSTART', False)
-        sync_interval = getattr(settings, 'AUTO_SYNC_INTERVAL_MINUTES', 20)
-
-        debug_info = {
-            'ai_context': ai_context_info,
-            'gmail': gmail_info,
-            'emails': {
-                'total': total_emails,
-                'processed_by_ai': processed_emails,
-                'unprocessed': total_emails - processed_emails
-            },
-            'responses': {
-                'pending_approval': pending_count,
-                'sent': sent_count,
-                'approved_not_sent': approved_count,
-                'rejected': rejected_count,
-                'total': pending_count + sent_count + approved_count + rejected_count
-            },
-            'temporal_rules': temporal_rules,
-            'openai_configured': bool(settings.OPENAI_API_KEY),
-            'scheduler': {
-                'enabled': scheduler_enabled,
-                'interval_minutes': sync_interval
-            },
-            'auto_send_diagnosis': {
-                'ai_context_exists': ai_context_info.get('exists', False),
-                'ai_is_active': ai_context_info.get('is_active', False),
-                'auto_send_enabled': ai_context_info.get('auto_send', False),
-                'gmail_connected': gmail_info.get('connected', False),
-                'scheduler_running': scheduler_enabled,
-                'ready_to_auto_send': (
-                    ai_context_info.get('exists', False) and
-                    ai_context_info.get('is_active', False) and
-                    ai_context_info.get('auto_send', False) and
-                    gmail_info.get('connected', False) and
-                    scheduler_enabled
-                )
-            }
-        }
-
-        return JsonResponse({
-            'success': True,
-            'debug_info': debug_info
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        })
 
 # ========== OUTLOOK/OFFICE 365 VIEWS ==========
 
