@@ -1494,10 +1494,12 @@ def get_all_emails_with_ai_status(request):
                 intent = email.emailintent
                 ai_decision_value = 1 if intent.ai_decision == 'respond' else 0
                 has_response = hasattr(intent, 'airesponse')
+                response_id = intent.airesponse.id if has_response else None
                 response_status = intent.airesponse.status if has_response else None
             else:
                 ai_decision_value = None
                 has_response = False
+                response_id = None
                 response_status = None
 
             email_data.append({
@@ -1508,6 +1510,7 @@ def get_all_emails_with_ai_status(request):
                 'has_intent': has_intent,
                 'ai_decision': ai_decision_value,  # 1 para respond, 0 para escalate
                 'has_response': has_response,
+                'response_id': response_id,  # ID of the AIResponse if exists
                 'response_status': response_status,
                 'intent_type': intent.intent_type if has_intent else None,
                 'confidence': intent.confidence_score if has_intent else None,

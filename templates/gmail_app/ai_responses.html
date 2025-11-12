@@ -709,19 +709,54 @@
 }
 
 .loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
     text-align: center;
     padding: 3rem;
     color: #718096;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
 .loading-spinner i {
     font-size: 3rem;
+    color: #4285f4;
+    animation: spin 1s linear infinite;
+}
+
+/* Spinner CSS alternativo (sin depender de fontawesome) */
+.spinner-circle {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #4285f4;
+    border-radius: 50%;
     animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Animación pulse alternativa */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.loading-text {
+    color: #4285f4;
+    font-weight: 600;
+    font-size: 1rem;
+    margin: 0;
+    animation: pulse 1.5s ease-in-out infinite;
 }
 
 /* Modal styles */
@@ -914,8 +949,15 @@
                 Vista completa de todos los emails procesados por IA con sus decisiones y nivel de confianza.
             </p>
             <div id="table-loading" class="loading-spinner">
-                <i class="fas fa-spinner"></i>
-                <p>Cargando datos...</p>
+                <div style="
+                    width: 50px;
+                    height: 50px;
+                    border: 4px solid #e2e8f0;
+                    border-top: 4px solid #4285f4;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                "></div>
+                <p class="loading-text" style="margin: 0;">Cargando emails...</p>
             </div>
             <div id="table-container" style="display: none;">
                 <table id="emailsTable" class="display">
@@ -1216,102 +1258,203 @@ function switchTab(tabName) {
 
 // Load all emails data via AJAX
 function loadAllEmailsData() {
+    console.log('[Emails Loader] Iniciando carga de datos...');
+
+    const loadingDiv = document.getElementById('table-loading');
+    const containerDiv = document.getElementById('table-container');
+
+    // Mostrar loading spinner
+    loadingDiv.style.display = 'flex';
+    loadingDiv.innerHTML = `
+        <div style="text-align: center; width: 100%;">
+            <div style="
+                width: 50px;
+                height: 50px;
+                border: 4px solid #e2e8f0;
+                border-top: 4px solid #4285f4;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 1rem;
+            "></div>
+            <p style="color: #4285f4; font-weight: 600; margin: 0;">Cargando emails...</p>
+        </div>
+    `;
+    containerDiv.style.display = 'none';
+
+    console.log('[Emails Loader] Llamando a /api/emails-ai-status/');
+
     fetch('/api/emails-ai-status/')
-        .then(response => response.json())
+        .then(response => {
+            console.log('[Emails Loader] Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            document.getElementById('table-loading').style.display = 'none';
-            document.getElementById('table-container').style.display = 'block';
+            console.log('[Emails Loader] Datos recibidos:', data);
+            console.log('[Emails Loader] Total emails:', data.emails ? data.emails.length : 0);
 
-            emailsTable = $('#emailsTable').DataTable({
-                data: data.emails,
-                columns: [
-                    {
-                        data: null,
-                        render: function(data, type, row) {
-                            return `
-                                <div class="email-cell">
-                                    <span class="email-from">${row.sender}</span>
-                                    <span class="email-subject">${row.subject}</span>
-                                </div>
-                            `;
-                        }
-                    },
-                    {
-                        data: 'decision',
-                        render: function(data, type, row) {
-                            if (data === 1) {
-                                return `
-                                    <span class="decision-badge decision-respond">
-                                        <i class="fas fa-check-circle"></i> Responder (1)
-                                    </span>
-                                `;
-                            } else {
-                                return `
-                                    <span class="decision-badge decision-escalate">
-                                        <i class="fas fa-exclamation-triangle"></i> Escalar (0)
-                                    </span>
-                                `;
-                            }
-                        }
-                    },
-                    {
-                        data: 'confidence',
-                        render: function(data, type, row) {
-                            const confidence = Math.round(data);
-                            let colorClass = 'low';
-                            if (confidence >= 75) colorClass = 'high';
-                            else if (confidence >= 50) colorClass = 'medium';
+            if (!data.success || !data.emails || data.emails.length === 0) {
+                console.warn('[Emails Loader] Sin datos disponibles');
+                loadingDiv.innerHTML = `
+                    <div style="text-align: center; width: 100%; padding: 2rem;">
+                        <i class="fas fa-inbox" style="font-size: 2.5rem; color: #cbd5e0; margin-bottom: 1rem;"></i>
+                        <p style="color: #718096; font-weight: 600;">No hay emails para mostrar</p>
+                        <p style="color: #a0aec0; font-size: 0.9rem;">Sincroniza nuevos emails para verlos aquí</p>
+                    </div>
+                `;
+                return;
+            }
 
-                            return `
-                                <div class="confidence-bar">
-                                    <div class="confidence-progress">
-                                        <div class="confidence-fill ${colorClass}" style="width: ${confidence}%"></div>
+            console.log('[Emails Loader] Inicializando DataTables...');
+
+            // Limpiar si existe
+            if (emailsTable) {
+                emailsTable.destroy();
+                console.log('[Emails Loader] DataTable anterior destruido');
+            }
+
+            // Ocultar loading y mostrar tabla
+            loadingDiv.style.display = 'none';
+            containerDiv.style.display = 'block';
+
+            // Inicializar DataTable
+            try {
+                emailsTable = $('#emailsTable').DataTable({
+                    data: data.emails,
+                    columns: [
+                        {
+                            title: 'Email',
+                            data: null,
+                            render: function(data, type, row) {
+                                return `
+                                    <div class="email-cell">
+                                        <span class="email-from">${row.sender || 'Desconocido'}</span>
+                                        <span class="email-subject">${row.subject || 'Sin asunto'}</span>
                                     </div>
-                                    <span class="confidence-text">${confidence}%</span>
-                                </div>
-                            `;
-                        }
-                    },
-                    {
-                        data: null,
-                        render: function(data, type, row) {
-                            if (row.has_pending_response && row.response_id) {
-                                return `
-                                    <a href="/ai-responses/approve/${row.response_id}/" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-paper-plane"></i> Aprobar
-                                    </a>
                                 `;
-                            } else if (row.has_pending_response) {
-                                return `<span style="color: #4285f4; font-weight: 600;"><i class="fas fa-clock"></i> Pendiente</span>`;
-                            } else {
-                                return `<span style="color: #718096;">-</span>`;
+                            }
+                        },
+                        {
+                            title: 'Decisión IA',
+                            data: 'ai_decision',
+                            render: function(data, type, row) {
+                                if (data === 1) {
+                                    return `
+                                        <span class="decision-badge decision-respond">
+                                            <i class="fas fa-check-circle"></i> Responder
+                                        </span>
+                                    `;
+                                } else if (data === 0) {
+                                    return `
+                                        <span class="decision-badge decision-escalate">
+                                            <i class="fas fa-exclamation-triangle"></i> Escalar
+                                        </span>
+                                    `;
+                                } else {
+                                    return `<span style="color: #718096;">-</span>`;
+                                }
+                            }
+                        },
+                        {
+                            title: 'Confianza',
+                            data: 'confidence',
+                            render: function(data, type, row) {
+                                const confidence = data ? Math.round(data) : 0;
+                                let colorClass = 'low';
+                                if (confidence >= 75) colorClass = 'high';
+                                else if (confidence >= 50) colorClass = 'medium';
+
+                                return `
+                                    <div class="confidence-bar">
+                                        <div class="confidence-progress">
+                                            <div class="confidence-fill ${colorClass}" style="width: ${confidence}%"></div>
+                                        </div>
+                                        <span class="confidence-text">${confidence}%</span>
+                                    </div>
+                                `;
+                            }
+                        },
+                        {
+                            title: 'Acción',
+                            data: null,
+                            render: function(data, type, row) {
+                                // Check if email has a pending response (response_status = 'pending_approval')
+                                if (row.has_response && row.response_status === 'pending_approval' && row.response_id) {
+                                    return `
+                                        <a href="/response/approve/${row.response_id}/" class="btn btn-primary btn-sm" style="display: inline-block; padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                            <i class="fas fa-check"></i> Aprobar
+                                        </a>
+                                    `;
+                                } else if (row.has_response) {
+                                    const statusText = row.response_status === 'sent' ? 'Enviada' : row.response_status === 'approved' ? 'Aprobada' : row.response_status === 'rejected' ? 'Rechazada' : row.response_status;
+                                    return `<span style="color: #718096; font-size: 0.9rem;">✓ ${statusText}</span>`;
+                                } else {
+                                    return `<span style="color: #cbd5e0;">-</span>`;
+                                }
                             }
                         }
+                    ],
+                    order: [[2, 'desc']],
+                    pageLength: 25,
+                    paging: true,
+                    searching: true,
+                    ordering: true,
+                    responsive: true,
+                    language: {
+                        search: "Buscar:",
+                        lengthMenu: "Mostrar _MENU_ registros",
+                        info: "Mostrando _START_ a _END_ de _TOTAL_ emails",
+                        infoEmpty: "Mostrando 0 a 0 de 0 emails",
+                        infoFiltered: "(filtrado de _MAX_ emails totales)",
+                        paginate: {
+                            first: "Primero",
+                            last: "Ultimo",
+                            next: "Siguiente",
+                            previous: "Anterior"
+                        },
+                        emptyTable: "No hay datos disponibles"
                     }
-                ],
-                order: [[2, 'desc']], // Order by confidence desc
-                pageLength: 25,
-                language: {
-                    search: "Buscar:",
-                    lengthMenu: "Mostrar _MENU_ registros",
-                    info: "Mostrando _START_ a _END_ de _TOTAL_ emails",
-                    infoEmpty: "Mostrando 0 a 0 de 0 emails",
-                    infoFiltered: "(filtrado de _MAX_ emails totales)",
-                    paginate: {
-                        first: "Primero",
-                        last: "Ultimo",
-                        next: "Siguiente",
-                        previous: "Anterior"
-                    },
-                    emptyTable: "No hay datos disponibles"
-                }
-            });
+                });
+
+                console.log('[Emails Loader] DataTable inicializado correctamente');
+            } catch (dtError) {
+                console.error('[Emails Loader] Error al inicializar DataTable:', dtError);
+                loadingDiv.style.display = 'flex';
+                containerDiv.style.display = 'none';
+                loadingDiv.innerHTML = `
+                    <div style="text-align: center; width: 100%; padding: 2rem;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem; color: #ea4335; margin-bottom: 1rem;"></i>
+                        <p style="color: #ea4335; font-weight: 600;">Error al inicializar la tabla</p>
+                        <p style="color: #a0aec0; font-size: 0.9rem;">Intenta recargar la página</p>
+                    </div>
+                `;
+                throw dtError;
+            }
         })
         .catch(error => {
-            console.error('Error loading emails data:', error);
-            document.getElementById('table-loading').innerHTML = `
-                <i class="fas fa-exclamation-triangle" style="color: #ea4335;"></i>
-                <p>Error al cargar los datos. Por favor, intenta de nuevo.</p>
+            console.error('[Emails Loader] Error al cargar datos:', error);
+            loadingDiv.style.display = 'flex';
+            containerDiv.style.display = 'none';
+            loadingDiv.innerHTML = `
+                <div style="text-align: center; width: 100%; padding: 2rem;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem; color: #ea4335; margin-bottom: 1rem;"></i>
+                    <p style="color: #ea4335; font-weight: 600;">Error al cargar los datos</p>
+                    <p style="color: #a0aec0; font-size: 0.9rem;">${error.message}</p>
+                    <button onclick="loadAllEmailsData()" style="
+                        margin-top: 1rem;
+                        padding: 0.6rem 1.2rem;
+                        background-color: #4285f4;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 600;
+                    ">
+                        <i class="fas fa-redo"></i> Reintentar
+                    </button>
+                </div>
             `;
         });
 }
