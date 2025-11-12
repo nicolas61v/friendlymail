@@ -14,7 +14,7 @@ from .exceptions import (
     RefreshTokenInvalidError, OAuthError, GmailAPIError,
     QuotaExceededError, PermissionError
 )
-from .ai_models import AIContext, AIRole, TemporalRule, EmailIntent, AIResponse
+from .ai_models import AIRole, TemporalRule, EmailIntent, AIResponse
 from .ai_service import EmailAIProcessor
 from .forms import UserRegistrationForm, UserLoginForm
 
@@ -238,9 +238,9 @@ def sync_emails_api(request):
         gmail_service = GmailService(request.user)
         synced_emails = gmail_service.sync_emails()
 
-        # Check if user has AI processing enabled (supports both AIRole and AIContext)
+        # Check if user has AI processing enabled
         try:
-            # Try to get active AIRole (new system) first, then fall back to AIContext
+            # Get active AIRole
             ai_context = AIRole.get_active_role(request.user)
 
             if ai_context and synced_emails:
@@ -425,127 +425,12 @@ def clear_oauth_session(request):
     return redirect('dashboard')
 
 
-@login_required
-def ai_config(request):
-    """Configure AI context and rules"""
-    try:
-        ai_context = AIContext.objects.get(user=request.user)
-    except AIContext.DoesNotExist:
-        ai_context = None
-    
-    # Get user's temporal rules
-    temporal_rules = TemporalRule.objects.filter(
-        ai_context__user=request.user
-    ).order_by('-priority', '-created_at') if ai_context else []
-    
-    context = {
-        'ai_context': ai_context,
-        'temporal_rules': temporal_rules,
-        'has_ai_config': ai_context is not None
-    }
-
-    return render(request, 'gmail_app/ai_config_simple.html', context)
 
 
-@login_required
-def ai_context_save(request):
-    """Save or update AI context"""
-    if request.method == 'POST':
-        try:
-            # Get or create AI context
-            ai_context, created = AIContext.objects.get_or_create(
-                user=request.user,
-                defaults={'role': 'Assistant', 'context_description': ''}
-            )
-            
-            # Update fields
-            ai_context.role = request.POST.get('role', '')
-            ai_context.context_description = request.POST.get('context_description', '')
-            ai_context.complexity_level = request.POST.get('complexity_level', 'simple')
-            ai_context.can_respond_topics = request.POST.get('can_respond_topics', '')
-            ai_context.cannot_respond_topics = request.POST.get('cannot_respond_topics', '')
-            ai_context.allowed_domains = request.POST.get('allowed_domains', '')
-            ai_context.auto_send = request.POST.get('auto_send') == 'on'
-            ai_context.is_active = request.POST.get('is_active') == 'on'
-            
-            ai_context.save()
-            
-            action = 'created' if created else 'updated'
-            messages.success(request, f'🤖 AI context {action} successfully!')
-            logger.info(f"AI context {action} for user {request.user.username}")
-            
-        except Exception as e:
-            logger.error(f"Error saving AI context for user {request.user.username}: {e}")
-            messages.error(request, f'❌ Error saving AI context: {str(e)}')
-    
-    return redirect('ai_config')
 
 
-@login_required 
-def temporal_rule_save(request):
-    """Save or update temporal rule"""
-    if request.method == 'POST':
-        try:
-            # Get user's AI context
-            ai_context = AIContext.objects.get(user=request.user)
-            
-            rule_id = request.POST.get('rule_id')
-            
-            if rule_id:
-                # Update existing rule
-                rule = TemporalRule.objects.get(id=rule_id, ai_context=ai_context)
-                action = 'updated'
-            else:
-                # Create new rule
-                rule = TemporalRule(ai_context=ai_context)
-                action = 'created'
-            
-            # Update fields
-            rule.name = request.POST.get('name', '')
-            rule.description = request.POST.get('description', '')
-            rule.start_date = request.POST.get('start_date')
-            rule.end_date = request.POST.get('end_date')
-            rule.keywords = request.POST.get('keywords', '')
-            rule.email_filters = request.POST.get('email_filters', '')
-            rule.response_template = request.POST.get('response_template', '')
-            rule.status = request.POST.get('status', 'draft')
-            rule.priority = int(request.POST.get('priority', 1))
-            
-            rule.save()
-            
-            messages.success(request, f'⏰ Temporal rule "{rule.name}" {action} successfully!')
-            logger.info(f"Temporal rule {action} by user {request.user.username}: {rule.name}")
-            
-        except AIContext.DoesNotExist:
-            messages.error(request, '⚠️ Please configure your AI context first')
-        except Exception as e:
-            logger.error(f"Error saving temporal rule for user {request.user.username}: {e}")
-            messages.error(request, f'❌ Error saving rule: {str(e)}')
-    
-    return redirect('ai_config')
 
 
-@login_required
-def temporal_rule_delete(request, rule_id):
-    """Delete temporal rule"""
-    try:
-        rule = TemporalRule.objects.get(
-            id=rule_id, 
-            ai_context__user=request.user
-        )
-        rule_name = rule.name
-        rule.delete()
-        
-        messages.success(request, f'🗑️ Rule "{rule_name}" deleted successfully')
-        logger.info(f"Temporal rule deleted by user {request.user.username}: {rule_name}")
-        
-    except TemporalRule.DoesNotExist:
-        messages.error(request, '❌ Rule not found')
-    except Exception as e:
-        logger.error(f"Error deleting temporal rule for user {request.user.username}: {e}")
-        messages.error(request, f'❌ Error deleting rule: {str(e)}')
-    
-    return redirect('ai_config')
 
 
 @login_required

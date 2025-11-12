@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import EmailAccount, GmailAccount, Email
-from .ai_models import AIContext, TemporalRule, EmailIntent, AIResponse, AIStats
+from .ai_models import TemporalRule, EmailIntent, AIResponse, AIStats
 
 
 @admin.register(EmailAccount)
@@ -28,13 +28,6 @@ class EmailAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         # Optimize with select_related
         return super().get_queryset(request).select_related('email_account', 'gmail_account')
-
-
-@admin.register(AIContext)
-class AIContextAdmin(admin.ModelAdmin):
-    list_display = ['user', 'role', 'complexity_level', 'is_active', 'auto_send']
-    list_filter = ['complexity_level', 'is_active', 'auto_send']
-    search_fields = ['role', 'context_description']
 
 
 @admin.register(TemporalRule)
