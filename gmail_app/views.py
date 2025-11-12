@@ -605,13 +605,13 @@ def approve_response(request, response_id):
 
             logger.info(f"Attempting to send email to {ai_response.email_intent.email.sender}")
             logger.info(f"  Subject: {ai_response.response_subject}")
-            logger.info(f"  Reply to: {ai_response.email_intent.email.gmail_id}")
+            logger.info(f"  Reply to: {ai_response.email_intent.email.provider_id}")
 
             sent_message_id = gmail_service.send_email(
                 to_email=ai_response.email_intent.email.sender,
                 subject=ai_response.response_subject,
                 body=ai_response.response_text,
-                reply_to_message_id=ai_response.email_intent.email.gmail_id
+                reply_to_message_id=ai_response.email_intent.email.provider_id
             )
 
             logger.info(f"Email sent successfully! Message ID: {sent_message_id}")
@@ -703,7 +703,7 @@ def resend_response(request, response_id):
                 to_email=ai_response.email_intent.email.sender,
                 subject=ai_response.response_subject,
                 body=ai_response.response_text,
-                reply_to_message_id=ai_response.email_intent.email.gmail_id
+                reply_to_message_id=ai_response.email_intent.email.provider_id
             )
 
             # Update status and timestamp
