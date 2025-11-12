@@ -9,13 +9,29 @@ urlpatterns = [
     path('logout/', views.user_logout, name='logout'),
     # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
+
+    # Gmail
     path('connect-gmail/', views.connect_gmail, name='connect_gmail'),
     path('gmail/callback/', views.gmail_callback, name='gmail_callback'),
+    path('disconnect-gmail/', views.disconnect_gmail, name='disconnect_gmail'),
+
+    # Outlook
+    path('connect-outlook/', views.connect_outlook, name='connect_outlook'),
+    path('outlook/callback/', views.outlook_callback, name='outlook_callback'),
+    path('disconnect-outlook/<int:account_id>/', views.disconnect_outlook, name='disconnect_outlook'),
+    path('sync-outlook/', views.sync_outlook, name='sync_outlook'),
+
+    # Multi-account management
+    path('disconnect-account/<int:account_id>/', views.disconnect_email_account, name='disconnect_email_account'),
+    path('sync-all/', views.sync_all_accounts, name='sync_all_accounts'),
+
+    # Email syncing (legacy)
     path('sync-emails/', views.sync_emails, name='sync_emails'),
     path('api/sync-emails/', views.sync_emails_api, name='sync_emails_api'),
+
+    # Email details & system
     path('email/<int:email_id>/', views.email_detail, name='email_detail'),
     path('api/logs/', views.system_logs, name='system_logs'),
-    path('disconnect-gmail/', views.disconnect_gmail, name='disconnect_gmail'),
     path('clear-oauth-session/', views.clear_oauth_session, name='clear_oauth_session'),
     
     # AI Configuration

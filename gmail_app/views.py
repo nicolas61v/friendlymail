@@ -8,7 +8,8 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.conf import settings
 from .gmail_service import GmailService
-from .models import Email, GmailAccount
+from .outlook_service import OutlookService
+from .models import Email, EmailAccount, GmailAccount
 from .exceptions import (
     RefreshTokenInvalidError, OAuthError, GmailAPIError,
     QuotaExceededError, PermissionError
@@ -97,19 +98,55 @@ def user_logout(request):
 
 @login_required
 def dashboard(request):
-    try:
-        gmail_account = GmailAccount.objects.get(user=request.user)
-        emails = Email.objects.filter(gmail_account=gmail_account)[:20]
+    """
+    Unified dashboard showing emails from ALL connected accounts
+    (Gmail + Outlook), sorted chronologically
+    """
+    # Get all active email accounts for this user
+    email_accounts = EmailAccount.objects.filter(user=request.user, is_active=True)
+
+    # Get accounts by provider
+    gmail_accounts = email_accounts.filter(provider='gmail')
+    outlook_accounts = email_accounts.filter(provider='outlook')
+
+    # Get last 50 emails from ALL accounts, unified and sorted by received_date
+    if email_accounts.exists():
+        emails = Email.objects.filter(
+            email_account__in=email_accounts
+        ).select_related('email_account').order_by('-received_date')[:50]
+    else:
+        # Fallback: check legacy GmailAccount
+        try:
+            legacy_gmail = GmailAccount.objects.get(user=request.user)
+            emails = Email.objects.filter(gmail_account=legacy_gmail)[:20]
+            has_legacy = True
+        except GmailAccount.DoesNotExist:
+            emails = []
+            has_legacy = False
+
         context = {
-            'gmail_account': gmail_account,
             'emails': emails,
-            'has_gmail': True
+            'email_accounts': [],
+            'gmail_accounts': [],
+            'outlook_accounts': [],
+            'has_accounts': False,
+            'has_legacy_gmail': has_legacy,
+            'total_accounts': 0
         }
-    except GmailAccount.DoesNotExist:
-        context = {
-            'has_gmail': False
-        }
-    
+        return render(request, 'gmail_app/dashboard.html', context)
+
+    context = {
+        'emails': emails,
+        'email_accounts': email_accounts,
+        'gmail_accounts': gmail_accounts,
+        'outlook_accounts': outlook_accounts,
+        'has_accounts': True,
+        'has_gmail': gmail_accounts.exists(),
+        'has_outlook': outlook_accounts.exists(),
+        'total_accounts': email_accounts.count(),
+        'total_emails': emails.count()
+    }
+
     return render(request, 'gmail_app/dashboard.html', context)
 
 
@@ -857,3 +894,222 @@ def debug_ai_status(request):
             'success': False,
             'error': str(e)
         })
+
+# ========== OUTLOOK/OFFICE 365 VIEWS ==========
+
+@login_required
+def connect_outlook(request):
+    """Initiate Outlook OAuth2 flow"""
+    try:
+        outlook_service = OutlookService(request.user)
+        authorization_url = outlook_service.get_authorization_url(request)
+        logger.info(f"User {request.user.username} initiating Outlook connection")
+        return redirect(authorization_url)
+    except Exception as e:
+        logger.error(f"Error initiating Outlook connection for {request.user.username}: {e}")
+        messages.error(request, f'❌ Error connecting to Outlook: {str(e)}')
+        return redirect('dashboard')
+
+
+@login_required
+def outlook_callback(request):
+    """Handle Outlook OAuth2 callback"""
+    try:
+        logger.info(f"Processing Outlook OAuth callback for user {request.user.username}")
+        outlook_service = OutlookService(request.user)
+        email_account = outlook_service.handle_oauth_callback(request)
+        
+        messages.success(
+            request,
+            f'✅ Outlook account {email_account.email} connected successfully!'
+        )
+        messages.info(request, '📥 Ready to sync your Outlook emails! Click "Sync Outlook" to start.')
+        return redirect('dashboard')
+        
+    except Exception as e:
+        logger.error(f"Outlook OAuth error for user {request.user.username}: {e}")
+        error_str = str(e)
+        
+        if 'Invalid state parameter' in error_str:
+            messages.error(
+                request,
+                '🔒 Security validation failed. Please try connecting again.',
+                extra_tags='oauth_error'
+            )
+        elif 'No refresh token' in error_str:
+            messages.error(
+                request,
+                '🔑 Refresh token not received. Please ensure you grant all permissions when prompted.',
+                extra_tags='oauth_error'
+            )
+        else:
+            messages.error(
+                request,
+                f'❌ Error connecting to Outlook: {error_str}. Please try again.',
+                extra_tags='connection_error'
+            )
+        return redirect('dashboard')
+
+
+@login_required
+def sync_outlook(request):
+    """Sync emails from Outlook"""
+    try:
+        logger.info(f"User {request.user.username} initiated Outlook email sync")
+        outlook_service = OutlookService(request.user)
+        result = outlook_service.sync_emails(max_results=50)
+        
+        messages.success(
+            request,
+            f'✅ Synced {result["total_synced"]} Outlook emails! '
+            f'({result["new_emails"]} new, {result["updated_emails"]} updated)'
+        )
+        logger.info(
+            f"Outlook sync complete for {request.user.username}: "
+            f"{result['new_emails']} new, {result['updated_emails']} updated"
+        )
+        
+    except Exception as e:
+        logger.error(f"Outlook sync error for user {request.user.username}: {e}")
+        error_str = str(e)
+        
+        if 'No active Outlook account' in error_str:
+            messages.error(request, '⚠️ Please connect your Outlook account first.')
+        elif 'Failed to refresh token' in error_str:
+            messages.error(request, '🔑 Your Outlook access has expired. Please reconnect your account.')
+        else:
+            messages.error(request, f'📧 Error syncing Outlook emails: {error_str}')
+    
+    return redirect('dashboard')
+
+
+@login_required
+def disconnect_outlook(request, account_id):
+    """Disconnect specific Outlook account"""
+    try:
+        account = EmailAccount.objects.get(
+            id=account_id,
+            user=request.user,
+            provider='outlook'
+        )
+        email = account.email
+        
+        # Deactivate account (don't delete emails, just deactivate)
+        account.is_active = False
+        account.save()
+        
+        logger.info(f"User {request.user.username} disconnected Outlook account {email}")
+        messages.success(request, f'✅ Successfully disconnected Outlook account {email}')
+        
+    except EmailAccount.DoesNotExist:
+        messages.warning(request, '⚠️ Outlook account not found')
+        logger.warning(f"User {request.user.username} tried to disconnect non-existent Outlook account {account_id}")
+    except Exception as e:
+        logger.error(f"Error disconnecting Outlook for user {request.user.username}: {e}")
+        messages.error(request, f'❌ Error disconnecting Outlook: {str(e)}')
+    
+    return redirect('dashboard')
+
+
+@login_required
+def disconnect_email_account(request, account_id):
+    """Disconnect any email account (Gmail or Outlook)"""
+    try:
+        account = EmailAccount.objects.get(
+            id=account_id,
+            user=request.user
+        )
+        email = account.email
+        provider = account.get_provider_display()
+        
+        # Deactivate account
+        account.is_active = False
+        account.save()
+        
+        logger.info(f"User {request.user.username} disconnected {provider} account {email}")
+        messages.success(request, f'✅ Successfully disconnected {provider} account {email}')
+        
+    except EmailAccount.DoesNotExist:
+        messages.warning(request, '⚠️ Email account not found')
+        logger.warning(f"User {request.user.username} tried to disconnect non-existent account {account_id}")
+    except Exception as e:
+        logger.error(f"Error disconnecting email account for user {request.user.username}: {e}")
+        messages.error(request, f'❌ Error disconnecting account: {str(e)}')
+    
+    return redirect('dashboard')
+
+
+@login_required
+def sync_all_accounts(request):
+    """Sync emails from ALL connected accounts (Gmail + Outlook)"""
+    try:
+        email_accounts = EmailAccount.objects.filter(user=request.user, is_active=True)
+        
+        if not email_accounts.exists():
+            messages.warning(request, '⚠️ No email accounts connected. Please connect Gmail or Outlook first.')
+            return redirect('dashboard')
+        
+        total_synced = 0
+        total_new = 0
+        total_updated = 0
+        errors = []
+        
+        # Sync Gmail accounts
+        gmail_accounts = email_accounts.filter(provider='gmail')
+        for account in gmail_accounts:
+            try:
+                gmail_service = GmailService(request.user)
+                # Note: GmailService needs to be updated to support multiple accounts
+                # For now, this will only sync the first Gmail account
+                synced_emails = gmail_service.sync_emails()
+                count = len(synced_emails) if synced_emails else 0
+                total_synced += count
+                total_new += count
+                logger.info(f"Synced {count} emails from Gmail account {account.email}")
+            except Exception as e:
+                error_msg = f"Gmail ({account.email}): {str(e)}"
+                errors.append(error_msg)
+                logger.error(f"Error syncing Gmail account {account.email}: {e}")
+        
+        # Sync Outlook accounts
+        outlook_accounts = email_accounts.filter(provider='outlook')
+        for account in outlook_accounts:
+            try:
+                outlook_service = OutlookService(request.user)
+                result = outlook_service.sync_emails(max_results=50)
+                total_synced += result['total_synced']
+                total_new += result['new_emails']
+                total_updated += result['updated_emails']
+                logger.info(
+                    f"Synced {result['total_synced']} emails from Outlook account {account.email}: "
+                    f"{result['new_emails']} new, {result['updated_emails']} updated"
+                )
+            except Exception as e:
+                error_msg = f"Outlook ({account.email}): {str(e)}"
+                errors.append(error_msg)
+                logger.error(f"Error syncing Outlook account {account.email}: {e}")
+        
+        # Show results
+        if total_synced > 0:
+            messages.success(
+                request,
+                f'✅ Synced {total_synced} emails from {email_accounts.count()} account(s)! '
+                f'({total_new} new, {total_updated} updated)'
+            )
+        else:
+            messages.info(request, 'ℹ️ No new emails to sync')
+        
+        if errors:
+            for error in errors:
+                messages.warning(request, f'⚠️ {error}')
+        
+        logger.info(
+            f"Sync all complete for {request.user.username}: "
+            f"{total_synced} total, {total_new} new, {total_updated} updated"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error syncing all accounts for user {request.user.username}: {e}")
+        messages.error(request, f'❌ Error syncing accounts: {str(e)}')
+    
+    return redirect('dashboard')
