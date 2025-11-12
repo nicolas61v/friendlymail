@@ -328,9 +328,16 @@ class GmailService:
             from email.mime.text import MIMEText
             from email.mime.multipart import MIMEMultipart
             import base64
-            
+            from email.utils import parseaddr
+
+            # Extract email address if it contains display name
+            # Convert "Name <email@domain.com>" to "email@domain.com"
+            _, clean_email = parseaddr(to_email)
+            if not clean_email:
+                clean_email = to_email
+
             message = MIMEMultipart()
-            message['to'] = to_email
+            message['to'] = clean_email
             message['subject'] = subject
             
             # Add reply headers if replying to a message
