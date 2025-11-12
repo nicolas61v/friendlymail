@@ -6,6 +6,65 @@
 {% block page_title %}Asistente de IA{% endblock %}
 
 {% block extra_styles %}
+/* Roles Alert Box */
+.roles-alert {
+    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.roles-alert i {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.roles-alert-content {
+    flex: 1;
+}
+
+.roles-alert-content h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.roles-alert-content p {
+    margin: 0;
+    font-size: 0.95rem;
+    opacity: 0.95;
+}
+
+.roles-alert-button {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.roles-alert-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+    transform: translateY(-2px);
+}
+
 .config-card {
     background: white;
     border-radius: 16px;
@@ -290,13 +349,25 @@ input:checked + .slider:before {
 {% endblock %}
 
 {% block content %}
+<!-- NEW: Roles Alert -->
+<div class="roles-alert">
+    <i class="fas fa-theater-masks"></i>
+    <div class="roles-alert-content">
+        <h3>🎭 Prueba el Nuevo Sistema de Roles</h3>
+        <p>Ahora puedes crear múltiples roles de IA con configuraciones independientes. Cambialos al vuelo según tus necesidades.</p>
+    </div>
+    <a href="{% url 'ai_roles_list' %}" class="roles-alert-button">
+        <i class="fas fa-arrow-right"></i> Ir a Roles
+    </a>
+</div>
+
 <div class="config-card">
     <div class="header-section">
         <div class="header-icon">
             <i class="fas fa-robot"></i>
         </div>
-        <h2>Configura tu Asistente de IA</h2>
-        <p>La IA aprenderá de tu contexto y ayudará a responder emails automáticamente</p>
+        <h2>Configura tu Asistente de IA (Heredado)</h2>
+        <p>Sistema anterior. Para usar múltiples roles, ve a "Ir a Roles" arriba.</p>
     </div>
 
     {% if not has_ai_config %}
