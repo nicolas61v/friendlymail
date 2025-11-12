@@ -1,0 +1,167 @@
+{% extends 'gmail_app/base_dashboard.html' %}
+
+{% block title %}Editar Respuesta - FriendlyMail{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Header -->
+            <div class="mb-4">
+                <a href="{% url 'ai_responses' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Volver a Respuestas
+                </a>
+                <h2 class="mt-3 mb-4">
+                    <i class="fas fa-edit"></i> Editar Respuesta
+                </h2>
+            </div>
+
+            <!-- Email Original -->
+            <div class="card mb-4 border-left-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Email Original</h5>
+                    <div class="alert alert-light">
+                        <p><strong>De:</strong> {{ email.sender }}</p>
+                        <p><strong>Asunto:</strong> {{ email.subject }}</p>
+                        <p><strong>Fecha:</strong> {{ email.received_date|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <p><strong>Contenido:</strong></p>
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 300px; overflow-y: auto;">
+                        {{ email.body_plain|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Edición -->
+            <div class="card border-left-success">
+                <div class="card-body">
+                    <h5 class="card-title">Editar Tu Respuesta</h5>
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- Asunto de Respuesta -->
+                        <div class="form-group mb-3">
+                            <label for="response_subject" class="form-label">
+                                <i class="fas fa-envelope"></i> Asunto de la Respuesta
+                            </label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="response_subject"
+                                name="response_subject"
+                                value="{{ ai_response.response_subject }}"
+                                required
+                            />
+                            <small class="form-text text-muted">Por defecto: Re: [asunto original]</small>
+                        </div>
+
+                        <!-- Cuerpo de Respuesta -->
+                        <div class="form-group mb-4">
+                            <label for="response_text" class="form-label">
+                                <i class="fas fa-pen-fancy"></i> Cuerpo de la Respuesta
+                            </label>
+                            <textarea
+                                class="form-control"
+                                id="response_text"
+                                name="response_text"
+                                rows="12"
+                                required
+                                style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"
+                            >{{ ai_response.response_text }}</textarea>
+                            <small class="form-text text-muted">
+                                Edita el contenido según sea necesario. Puedes cambiar cualquier parte de la respuesta.
+                            </small>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Guardar Cambios
+                            </button>
+                            <a href="{% url 'ai_responses' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información de Estado -->
+            <div class="card mt-4 border-left-info">
+                <div class="card-body">
+                    <h6 class="card-title">Información de la Respuesta</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Estado:</strong>
+                            {% if ai_response.status == 'pending_approval' %}
+                                <span class="badge bg-warning">Pendiente de Aprobación</span>
+                            {% elif ai_response.status == 'approved' %}
+                                <span class="badge bg-info">Aprobada</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ ai_response.get_status_display }}</span>
+                            {% endif %}
+                        </li>
+                        <li><strong>Generada:</strong> {{ ai_response.generated_at|date:"d/m/Y H:i" }}</li>
+                        <li><strong>Para:</strong> {{ email.sender }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .border-left-primary {
+        border-left: 4px solid #4285f4;
+    }
+
+    .border-left-success {
+        border-left: 4px solid #34a853;
+    }
+
+    .border-left-info {
+        border-left: 4px solid #1f73e6;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.75rem;
+    }
+
+    .form-control:focus {
+        border-color: #4285f4;
+        box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+    }
+
+    .btn {
+        border-radius: 6px;
+        font-weight: 500;
+        padding: 0.6rem 1.2rem;
+    }
+
+    .btn-success {
+        background-color: #34a853;
+        border-color: #34a853;
+    }
+
+    .btn-success:hover {
+        background-color: #2d8e47;
+        border-color: #2d8e47;
+    }
+</style>
+{% endblock %}

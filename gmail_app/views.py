@@ -584,6 +584,20 @@ def ai_responses(request):
                 status='rejected'
             ).select_related('email_intent__email').order_by('-generated_at')[:20]
 
+            # Calcular estadísticas para el resumen
+            email_accounts = EmailAccount.objects.filter(user=request.user)
+            gmail_accounts = GmailAccount.objects.filter(user=request.user)
+
+            total_emails = Email.objects.filter(
+                Q(email_account__in=email_accounts) | Q(gmail_account__in=gmail_accounts)
+            ).count()
+
+            responded_emails = EmailIntent.objects.filter(
+                Q(email__email_account__in=email_accounts) |
+                Q(email__gmail_account__in=gmail_accounts),
+                airesponse__isnull=False
+            ).distinct().count()
+
             context = {
                 'ai_context': ai_context,
                 'pending_responses': pending_responses,
@@ -592,7 +606,9 @@ def ai_responses(request):
                 'rejected_responses': rejected_responses,
                 'has_pending': pending_responses.exists(),
                 'has_sent': sent_responses.exists(),
-                'has_ai_config': True
+                'has_ai_config': True,
+                'total_emails': total_emails,
+                'responded_emails': responded_emails,
             }
         else:
             context = {
@@ -603,7 +619,9 @@ def ai_responses(request):
                 'approved_responses': [],
                 'rejected_responses': [],
                 'has_pending': False,
-                'has_sent': False
+                'has_sent': False,
+                'total_emails': 0,
+                'responded_emails': 0,
             }
 
     except Exception as e:
@@ -617,6 +635,8 @@ def ai_responses(request):
             'rejected_responses': [],
             'has_pending': False,
             'has_sent': False,
+            'total_emails': 0,
+            'responded_emails': 0,
             'error': str(e)
         }
 
@@ -1405,3 +1425,102 @@ def ai_role_temporal_rule_delete(request, role_id, rule_id):
         messages.error(request, f'❌ Error deleting rule: {str(e)}')
 
     return redirect('ai_role_edit', role_id=role_id)
+
+
+@login_required
+def edit_response(request, response_id):
+    """Edit AI response before sending"""
+    from django.db.models import Q
+
+    try:
+        # Support both email_account and gmail_account
+        ai_response = AIResponse.objects.get(
+            id=response_id,
+            status__in=['pending_approval', 'approved']
+        )
+
+        # Verify user ownership
+        email = ai_response.email_intent.email
+        if not (email.email_account and email.email_account.user == request.user) and \
+           not (email.gmail_account and email.gmail_account.user == request.user):
+            messages.error(request, '❌ No tienes permiso para editar esta respuesta')
+            return redirect('ai_responses')
+
+        if request.method == 'POST':
+            # Update response text and subject
+            ai_response.response_text = request.POST.get('response_text', ai_response.response_text)
+            ai_response.response_subject = request.POST.get('response_subject', ai_response.response_subject)
+            ai_response.save()
+
+            messages.success(request, '✅ Respuesta actualizada correctamente')
+            logger.info(f"Response {response_id} edited by user {request.user.username}")
+            return redirect('ai_responses')
+
+        context = {
+            'ai_response': ai_response,
+            'email': ai_response.email_intent.email,
+        }
+        return render(request, 'gmail_app/edit_response.html', context)
+
+    except AIResponse.DoesNotExist:
+        messages.error(request, '❌ Respuesta no encontrada o no disponible para editar')
+    except Exception as e:
+        logger.error(f"Error editing response {response_id} for user {request.user.username}: {e}")
+        messages.error(request, f'❌ Error: {str(e)}')
+
+    return redirect('ai_responses')
+
+
+@login_required
+def get_all_emails_with_ai_status(request):
+    """API endpoint para obtener todos los emails con su estado de IA"""
+    from django.db.models import Q, Case, When, Value, IntegerField
+
+    try:
+        # Obtener todos los emails del usuario
+        email_accounts = EmailAccount.objects.filter(user=request.user)
+        gmail_accounts = GmailAccount.objects.filter(user=request.user)
+
+        emails = Email.objects.filter(
+            Q(email_account__in=email_accounts) | Q(gmail_account__in=gmail_accounts)
+        ).select_related('emailintent').order_by('-received_date')
+
+        # Preparar datos para la tabla
+        email_data = []
+        for email in emails:
+            has_intent = hasattr(email, 'emailintent')
+
+            if has_intent:
+                intent = email.emailintent
+                ai_decision_value = 1 if intent.ai_decision == 'respond' else 0
+                has_response = hasattr(intent, 'airesponse')
+                response_status = intent.airesponse.status if has_response else None
+            else:
+                ai_decision_value = None
+                has_response = False
+                response_status = None
+
+            email_data.append({
+                'id': email.id,
+                'subject': email.subject,
+                'sender': email.sender,
+                'received_date': email.received_date,
+                'has_intent': has_intent,
+                'ai_decision': ai_decision_value,  # 1 para respond, 0 para escalate
+                'has_response': has_response,
+                'response_status': response_status,
+                'intent_type': intent.intent_type if has_intent else None,
+                'confidence': intent.confidence_score if has_intent else None,
+            })
+
+        return JsonResponse({
+            'success': True,
+            'emails': email_data
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting email status for user {request.user.username}: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)

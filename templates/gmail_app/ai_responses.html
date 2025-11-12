@@ -15,11 +15,96 @@
 {% endblock %}
 
 {% block extra_styles %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<style>
 .quick-actions {
     display: flex;
     gap: 1rem;
     margin-bottom: 2rem;
     flex-wrap: wrap;
+}
+
+/* Summary Cards */
+.summary-section {
+    margin-bottom: 2.5rem;
+}
+
+.summary-section h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border-top: 4px solid transparent;
+}
+
+.summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.summary-card.total {
+    border-top-color: #4285f4;
+}
+
+.summary-card.responded {
+    border-top-color: #34a853;
+}
+
+.summary-card.pending {
+    border-top-color: #fbbc04;
+}
+
+.summary-card-content {
+    position: relative;
+    z-index: 1;
+}
+
+.summary-card h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #718096;
+    margin: 0 0 0.75rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.summary-card .number {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+    line-height: 1;
+}
+
+.summary-card .icon-bg {
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 5rem;
+    opacity: 0.08;
+    z-index: 0;
 }
 
 .stats-grid {
@@ -493,6 +578,226 @@
         flex: 1 1 45%;
     }
 }
+
+/* DataTables customization */
+.dataTables_wrapper {
+    padding: 1.5rem 0;
+}
+
+.dataTables_filter input {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    margin-left: 0.5rem;
+}
+
+.dataTables_filter input:focus {
+    outline: none;
+    border-color: #4285f4;
+}
+
+#emailsTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+#emailsTable thead {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+#emailsTable thead th {
+    padding: 1rem;
+    font-weight: 600;
+    color: #2d3748;
+    border-bottom: 2px solid #e2e8f0;
+    text-align: left;
+}
+
+#emailsTable tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+#emailsTable tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.email-cell {
+    max-width: 300px;
+}
+
+.email-from {
+    font-weight: 600;
+    color: #2d3748;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.email-subject {
+    color: #718096;
+    font-size: 0.9rem;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.decision-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.decision-respond {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+}
+
+.decision-escalate {
+    background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+    color: #856404;
+}
+
+.confidence-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.confidence-progress {
+    flex: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.confidence-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.confidence-fill.high {
+    background: linear-gradient(90deg, #34a853 0%, #2d8f46 100%);
+}
+
+.confidence-fill.medium {
+    background: linear-gradient(90deg, #fbbc04 0%, #f9ab00 100%);
+}
+
+.confidence-fill.low {
+    background: linear-gradient(90deg, #ea4335 0%, #d33b2c 100%);
+}
+
+.confidence-text {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.9rem;
+    min-width: 45px;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 3rem;
+    color: #718096;
+}
+
+.loading-spinner i {
+    font-size: 3rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Modal styles */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-overlay.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    margin-bottom: 1.5rem;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.modal-body textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.modal-body textarea:focus {
+    outline: none;
+    border-color: #4285f4;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    justify-content: flex-end;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -518,6 +823,34 @@
         <a href="{% url 'ai_config' %}" class="btn btn-secondary">
             <i class="fas fa-cog"></i>Configurar IA
         </a>
+    </div>
+
+    <!-- Summary Section -->
+    <div class="summary-section">
+        <h3><i class="fas fa-chart-line"></i>Resumen General</h3>
+        <div class="summary-cards">
+            <div class="summary-card total">
+                <div class="summary-card-content">
+                    <h4>Total Emails</h4>
+                    <p class="number">{{ total_emails }}</p>
+                </div>
+                <i class="fas fa-envelope icon-bg"></i>
+            </div>
+            <div class="summary-card responded">
+                <div class="summary-card-content">
+                    <h4>Respondidos por IA</h4>
+                    <p class="number">{{ responded_emails }}</p>
+                </div>
+                <i class="fas fa-paper-plane icon-bg"></i>
+            </div>
+            <div class="summary-card pending">
+                <div class="summary-card-content">
+                    <h4>Pendientes de Aprobación</h4>
+                    <p class="number">{{ pending_responses|length }}</p>
+                </div>
+                <i class="fas fa-clock icon-bg"></i>
+            </div>
+        </div>
     </div>
 
     <!-- Stats Overview (Clickable to switch tabs) -->
@@ -548,6 +881,11 @@
     <div class="tabs-container">
         <!-- Tabs Navigation -->
         <div class="tabs-nav">
+            <button class="tab-button" onclick="switchTab('all-emails')" id="tab-all-emails">
+                <i class="fas fa-list"></i>
+                Todos los Emails
+                <span class="tab-badge">{{ total_emails }}</span>
+            </button>
             <button class="tab-button active" onclick="switchTab('pending')" id="tab-pending">
                 <i class="fas fa-clock"></i>
                 Pendientes
@@ -568,6 +906,32 @@
                 Rechazadas
                 <span class="tab-badge">{{ rejected_responses|length }}</span>
             </button>
+        </div>
+
+        <!-- Tab Content: All Emails -->
+        <div id="content-all-emails" class="tab-content">
+            <p style="color: #718096; margin-bottom: 2rem; font-size: 1rem;">
+                Vista completa de todos los emails procesados por IA con sus decisiones y nivel de confianza.
+            </p>
+            <div id="table-loading" class="loading-spinner">
+                <i class="fas fa-spinner"></i>
+                <p>Cargando datos...</p>
+            </div>
+            <div id="table-container" style="display: none;">
+                <table id="emailsTable" class="display">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Decision IA</th>
+                            <th>Confianza</th>
+                            <th>Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data loaded via AJAX -->
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Tab Content: Pending Responses -->
@@ -604,7 +968,10 @@
                                 <a href="{% url 'approve_response' response.id %}" class="btn btn-success">
                                     <i class="fas fa-paper-plane"></i>Aprobar y Enviar
                                 </a>
-                                <button class="btn btn-danger" onclick="showRejectForm({{ response.id }})">
+                                <a href="{% url 'edit_response' response.id %}" class="btn btn-warning">
+                                    <i class="fas fa-edit"></i>Editar
+                                </a>
+                                <button class="btn btn-danger" onclick="showRejectModal({{ response.id }})">
                                     <i class="fas fa-times"></i>Rechazar
                                 </button>
                                 <button class="btn btn-secondary" onclick="toggleOriginalEmail({{ response.id }})">
@@ -615,26 +982,6 @@
                             <div id="original-{{ response.id }}" class="original-email" style="display: none;">
                                 <h5><i class="fas fa-envelope-open-text"></i>Email Original:</h5>
                                 <div class="email-content">{{ response.email_intent.email.body_plain|truncatechars:800 }}</div>
-                            </div>
-
-                            <div id="reject-form-{{ response.id }}" class="reject-form" style="display: none;">
-                                <form method="post" action="{% url 'reject_response' response.id %}">
-                                    {% csrf_token %}
-                                    <h5>¿Por qué rechazas esta respuesta?</h5>
-                                    <textarea
-                                        name="feedback"
-                                        placeholder="Feedback opcional para mejorar las respuestas de la IA..."
-                                        rows="3"
-                                    ></textarea>
-                                    <div class="form-actions">
-                                        <button type="submit" class="btn btn-danger">
-                                            <i class="fas fa-check"></i>Confirmar Rechazo
-                                        </button>
-                                        <button type="button" class="btn btn-secondary" onclick="hideRejectForm({{ response.id }})">
-                                            <i class="fas fa-times"></i>Cancelar
-                                        </button>
-                                    </div>
-                                </form>
                             </div>
                         </div>
                     {% endfor %}
@@ -812,10 +1159,45 @@
             {% endif %}
         </div>
     </div>
+
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-times-circle" style="color: #ea4335;"></i> Rechazar Respuesta</h3>
+            </div>
+            <form id="rejectForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p style="color: #718096; margin-bottom: 1rem;">Por favor, indica por que rechazas esta respuesta para mejorar el sistema de IA:</p>
+                    <textarea
+                        name="feedback"
+                        id="rejectFeedback"
+                        placeholder="Ejemplo: El tono es muy informal, falta informacion importante, contiene errores..."
+                        rows="4"
+                    ></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeRejectModal()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-check"></i> Confirmar Rechazo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 {% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script>
+let emailsTable = null;
+let currentRejectResponseId = null;
+
 // Tab switching
 function switchTab(tabName) {
     // Remove active class from all tabs and contents
@@ -825,6 +1207,113 @@ function switchTab(tabName) {
     // Add active class to selected tab and content
     document.getElementById('tab-' + tabName).classList.add('active');
     document.getElementById('content-' + tabName).classList.add('active');
+
+    // Load data for "all-emails" tab if not already loaded
+    if (tabName === 'all-emails' && !emailsTable) {
+        loadAllEmailsData();
+    }
+}
+
+// Load all emails data via AJAX
+function loadAllEmailsData() {
+    fetch('/api/emails-ai-status/')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('table-loading').style.display = 'none';
+            document.getElementById('table-container').style.display = 'block';
+
+            emailsTable = $('#emailsTable').DataTable({
+                data: data.emails,
+                columns: [
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            return `
+                                <div class="email-cell">
+                                    <span class="email-from">${row.sender}</span>
+                                    <span class="email-subject">${row.subject}</span>
+                                </div>
+                            `;
+                        }
+                    },
+                    {
+                        data: 'decision',
+                        render: function(data, type, row) {
+                            if (data === 1) {
+                                return `
+                                    <span class="decision-badge decision-respond">
+                                        <i class="fas fa-check-circle"></i> Responder (1)
+                                    </span>
+                                `;
+                            } else {
+                                return `
+                                    <span class="decision-badge decision-escalate">
+                                        <i class="fas fa-exclamation-triangle"></i> Escalar (0)
+                                    </span>
+                                `;
+                            }
+                        }
+                    },
+                    {
+                        data: 'confidence',
+                        render: function(data, type, row) {
+                            const confidence = Math.round(data);
+                            let colorClass = 'low';
+                            if (confidence >= 75) colorClass = 'high';
+                            else if (confidence >= 50) colorClass = 'medium';
+
+                            return `
+                                <div class="confidence-bar">
+                                    <div class="confidence-progress">
+                                        <div class="confidence-fill ${colorClass}" style="width: ${confidence}%"></div>
+                                    </div>
+                                    <span class="confidence-text">${confidence}%</span>
+                                </div>
+                            `;
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            if (row.has_pending_response && row.response_id) {
+                                return `
+                                    <a href="/ai-responses/approve/${row.response_id}/" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-paper-plane"></i> Aprobar
+                                    </a>
+                                `;
+                            } else if (row.has_pending_response) {
+                                return `<span style="color: #4285f4; font-weight: 600;"><i class="fas fa-clock"></i> Pendiente</span>`;
+                            } else {
+                                return `<span style="color: #718096;">-</span>`;
+                            }
+                        }
+                    }
+                ],
+                order: [[2, 'desc']], // Order by confidence desc
+                pageLength: 25,
+                language: {
+                    search: "Buscar:",
+                    lengthMenu: "Mostrar _MENU_ registros",
+                    info: "Mostrando _START_ a _END_ de _TOTAL_ emails",
+                    infoEmpty: "Mostrando 0 a 0 de 0 emails",
+                    infoFiltered: "(filtrado de _MAX_ emails totales)",
+                    paginate: {
+                        first: "Primero",
+                        last: "Ultimo",
+                        next: "Siguiente",
+                        previous: "Anterior"
+                    },
+                    emptyTable: "No hay datos disponibles"
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading emails data:', error);
+            document.getElementById('table-loading').innerHTML = `
+                <i class="fas fa-exclamation-triangle" style="color: #ea4335;"></i>
+                <p>Error al cargar los datos. Por favor, intenta de nuevo.</p>
+            `;
+        });
 }
 
 // Toggle original email
@@ -838,13 +1327,34 @@ function toggleOriginalEmail(responseId) {
     }
 }
 
-// Reject form functions
-function showRejectForm(responseId) {
-    document.getElementById('reject-form-' + responseId).style.display = 'block';
-    document.getElementById('reject-form-' + responseId).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+// Reject modal functions
+function showRejectModal(responseId) {
+    currentRejectResponseId = responseId;
+    const modal = document.getElementById('rejectModal');
+    const form = document.getElementById('rejectForm');
+    form.action = `/ai-responses/reject/${responseId}/`;
+    document.getElementById('rejectFeedback').value = '';
+    modal.classList.add('active');
 }
 
-function hideRejectForm(responseId) {
-    document.getElementById('reject-form-' + responseId).style.display = 'none';
+function closeRejectModal() {
+    const modal = document.getElementById('rejectModal');
+    modal.classList.remove('active');
+    currentRejectResponseId = null;
 }
+
+// Close modal when clicking outside
+document.getElementById('rejectModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRejectModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeRejectModal();
+    }
+});
+</script>
 {% endblock %}
