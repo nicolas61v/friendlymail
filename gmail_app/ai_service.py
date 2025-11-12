@@ -132,7 +132,7 @@ class AIEmailAnalyzer:
         role_name = ai_role.name
 
         # Get topics that this role CAN respond to
-        can_respond_topics = ai_role.topics.strip() if ai_role.topics else ""
+        can_respond_topics = ai_role.can_respond_topics.strip() if ai_role.can_respond_topics else ""
 
         # Build topics section
         topics_section = ""

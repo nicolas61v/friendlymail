@@ -1006,10 +1006,16 @@ def ai_role_create(request):
     elif request.method == 'POST':
         try:
             role_name = request.POST.get('name', '').strip()
+            can_respond_topics = request.POST.get('can_respond_topics', '').strip()
 
             # Validate role name
             if not role_name:
                 messages.error(request, '❌ Role name is required')
+                return redirect('ai_role_create')
+
+            # Validate topics (required for AI to respond)
+            if not can_respond_topics:
+                messages.error(request, '❌ You must specify at least one topic that the AI can respond to. Without topics, the AI will not respond to any emails.')
                 return redirect('ai_role_create')
 
             # Check if role name already exists for this user
@@ -1023,7 +1029,7 @@ def ai_role_create(request):
                 name=role_name,
                 context_description=request.POST.get('context_description', ''),
                 complexity_level=request.POST.get('complexity_level', 'simple'),
-                can_respond_topics=request.POST.get('can_respond_topics', ''),
+                can_respond_topics=can_respond_topics,
                 cannot_respond_topics=request.POST.get('cannot_respond_topics', ''),
                 allowed_domains=request.POST.get('allowed_domains', ''),
                 auto_send=request.POST.get('auto_send') == 'on',
@@ -1067,10 +1073,16 @@ def ai_role_edit(request, role_id):
 
     elif request.method == 'POST':
         try:
+            # Validate topics (required for AI to respond)
+            can_respond_topics = request.POST.get('can_respond_topics', '').strip()
+            if not can_respond_topics:
+                messages.error(request, '❌ You must specify at least one topic that the AI can respond to. Without topics, the AI will not respond to any emails.')
+                return redirect('ai_role_edit', role_id=role_id)
+
             # Update role fields
             role.context_description = request.POST.get('context_description', '')
             role.complexity_level = request.POST.get('complexity_level', 'simple')
-            role.can_respond_topics = request.POST.get('can_respond_topics', '')
+            role.can_respond_topics = can_respond_topics
             role.cannot_respond_topics = request.POST.get('cannot_respond_topics', '')
             role.allowed_domains = request.POST.get('allowed_domains', '')
             role.auto_send = request.POST.get('auto_send') == 'on'
