@@ -646,11 +646,14 @@ def ai_responses(request):
 @login_required
 def approve_response(request, response_id):
     """Approve and send AI response (allows retry for approved responses)"""
+    from django.db.models import Q
     try:
         # Accept both 'pending_approval' and 'approved' to allow retries
+        # Support both email_account and gmail_account
         ai_response = AIResponse.objects.get(
-            id=response_id,
-            email_intent__email__gmail_account__user=request.user
+            Q(email_intent__email__gmail_account__user=request.user) |
+            Q(email_intent__email__email_account__user=request.user),
+            id=response_id
         )
 
         # Only allow pending or approved (not sent or rejected)
@@ -722,10 +725,12 @@ def approve_response(request, response_id):
 @login_required
 def reject_response(request, response_id):
     """Reject AI response"""
+    from django.db.models import Q
     try:
         ai_response = AIResponse.objects.get(
+            Q(email_intent__email__gmail_account__user=request.user) |
+            Q(email_intent__email__email_account__user=request.user),
             id=response_id,
-            email_intent__email__gmail_account__user=request.user,
             status='pending_approval'
         )
         
@@ -749,11 +754,14 @@ def reject_response(request, response_id):
 @login_required
 def resend_response(request, response_id):
     """Resend or send a previously sent/approved AI response"""
+    from django.db.models import Q
     try:
         # Accept both 'sent' and 'approved' statuses
+        # Support both email_account and gmail_account
         ai_response = AIResponse.objects.get(
-            id=response_id,
-            email_intent__email__gmail_account__user=request.user
+            Q(email_intent__email__gmail_account__user=request.user) |
+            Q(email_intent__email__email_account__user=request.user),
+            id=response_id
         )
 
         # Only allow resending for 'sent' or 'approved' responses

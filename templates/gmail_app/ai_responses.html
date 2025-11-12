@@ -1240,6 +1240,15 @@
 let emailsTable = null;
 let currentRejectResponseId = null;
 
+// Esperar a que jQuery esté disponible
+function waitForJQuery(callback) {
+    if (typeof jQuery !== 'undefined') {
+        callback();
+    } else {
+        setTimeout(() => waitForJQuery(callback), 50);
+    }
+}
+
 // Tab switching
 function switchTab(tabName) {
     // Remove active class from all tabs and contents
@@ -1319,9 +1328,10 @@ function loadAllEmailsData() {
             loadingDiv.style.display = 'none';
             containerDiv.style.display = 'block';
 
-            // Inicializar DataTable
-            try {
-                emailsTable = $('#emailsTable').DataTable({
+            // Inicializar DataTable - Esperar a que jQuery esté disponible
+            waitForJQuery(function() {
+                try {
+                    emailsTable = $('#emailsTable').DataTable({
                     data: data.emails,
                     columns: [
                         {
@@ -1419,19 +1429,20 @@ function loadAllEmailsData() {
                 });
 
                 console.log('[Emails Loader] DataTable inicializado correctamente');
-            } catch (dtError) {
-                console.error('[Emails Loader] Error al inicializar DataTable:', dtError);
-                loadingDiv.style.display = 'flex';
-                containerDiv.style.display = 'none';
-                loadingDiv.innerHTML = `
-                    <div style="text-align: center; width: 100%; padding: 2rem;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem; color: #ea4335; margin-bottom: 1rem;"></i>
-                        <p style="color: #ea4335; font-weight: 600;">Error al inicializar la tabla</p>
-                        <p style="color: #a0aec0; font-size: 0.9rem;">Intenta recargar la página</p>
-                    </div>
-                `;
-                throw dtError;
-            }
+                } catch (dtError) {
+                    console.error('[Emails Loader] Error al inicializar DataTable:', dtError);
+                    loadingDiv.style.display = 'flex';
+                    containerDiv.style.display = 'none';
+                    loadingDiv.innerHTML = `
+                        <div style="text-align: center; width: 100%; padding: 2rem;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem; color: #ea4335; margin-bottom: 1rem;"></i>
+                            <p style="color: #ea4335; font-weight: 600;">Error al inicializar la tabla</p>
+                            <p style="color: #a0aec0; font-size: 0.9rem;">Intenta recargar la página</p>
+                        </div>
+                    `;
+                    throw dtError;
+                }
+            });
         })
         .catch(error => {
             console.error('[Emails Loader] Error al cargar datos:', error);
