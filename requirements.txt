@@ -1,8 +1,19 @@
+# Core Framework
 Django==4.2.15
+python-dotenv==1.0.0
+
+# Gmail Integration
 google-auth==2.28.2
 google-auth-oauthlib==1.2.0
 google-auth-httplib2==0.2.0
 google-api-python-client==2.124.0
-python-dotenv==1.0.0
+
+# Outlook/Microsoft Graph Integration
+msal==1.31.1
+requests==2.32.5
+
+# AI/LLM
 openai==1.51.0
+
+# Task Scheduling
 django-apscheduler==0.6.2
