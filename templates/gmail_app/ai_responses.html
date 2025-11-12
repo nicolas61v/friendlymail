@@ -6,7 +6,7 @@
 {% block page_title %}Respuestas de IA{% endblock %}
 
 {% block top_bar_actions %}
-    {% if has_ai_config %}
+    {% if has_ai_role %}
     <a href="{% url 'process_existing_emails' %}" class="sync-button">
         <i class="fas fa-robot"></i>
         <span>Procesar Emails</span>
@@ -836,16 +836,16 @@
 {% endblock %}
 
 {% block content %}
-{% if not has_ai_config %}
+{% if not has_ai_role %}
     <div class="card">
         <div class="card-body" style="text-align: center; padding: 4rem;">
             <i class="fas fa-robot" style="font-size: 5rem; color: #4285f4; margin-bottom: 2rem; opacity: 0.8;"></i>
-            <h2 style="margin-bottom: 1rem;">Configura tu Asistente de IA Primero</h2>
+            <h2 style="margin-bottom: 1rem;">Configura tu Rol de IA Primero</h2>
             <p style="color: #718096; margin-bottom: 2rem; font-size: 1.1rem;">
-                Necesitas configurar tu contexto de IA antes de gestionar respuestas.
+                Necesitas crear un rol de IA antes de gestionar respuestas.
             </p>
-            <a href="{% url 'ai_config' %}" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">
-                <i class="fas fa-cog"></i>Configurar Asistente de IA
+            <a href="{% url 'ai_role_create' %}" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                <i class="fas fa-cog"></i>Crear Rol de IA
             </a>
         </div>
     </div>
@@ -855,8 +855,8 @@
         <a href="{% url 'process_existing_emails' %}" class="btn btn-primary">
             <i class="fas fa-robot"></i>Procesar Emails Existentes
         </a>
-        <a href="{% url 'ai_config' %}" class="btn btn-secondary">
-            <i class="fas fa-cog"></i>Configurar IA
+        <a href="{% url 'ai_roles_list' %}" class="btn btn-secondary">
+            <i class="fas fa-cog"></i>Administrar Roles
         </a>
     </div>
 

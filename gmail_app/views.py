@@ -550,85 +550,86 @@ def temporal_rule_delete(request, rule_id):
 
 @login_required
 def ai_responses(request):
-    """View and manage AI responses - supports both AIRole and AIContext"""
+    """View and manage AI responses"""
     from django.db.models import Q
 
     try:
-        # Get active AI configuration (AIRole or AIContext)
-        ai_context = AIRole.get_active_role(request.user)
-        has_ai_config = ai_context is not None
+        # Get active AI role
+        ai_role = AIRole.objects.get(user=request.user, is_active=True)
+        has_ai_role = True
 
-        if has_ai_config:
-            # Build query to get responses from both email_account and gmail_account
-            pending_responses = AIResponse.objects.filter(
-                Q(email_intent__email__email_account__user=request.user) |
-                Q(email_intent__email__gmail_account__user=request.user),
-                status='pending_approval'
-            ).select_related('email_intent__email').order_by('-generated_at')
+        # Build query to get responses from both email_account and gmail_account
+        pending_responses = AIResponse.objects.filter(
+            Q(email_intent__email__email_account__user=request.user) |
+            Q(email_intent__email__gmail_account__user=request.user),
+            status='pending_approval'
+        ).select_related('email_intent__email').order_by('-generated_at')
 
-            sent_responses = AIResponse.objects.filter(
-                Q(email_intent__email__email_account__user=request.user) |
-                Q(email_intent__email__gmail_account__user=request.user),
-                status='sent'
-            ).select_related('email_intent__email').order_by('-sent_at')[:50]
+        sent_responses = AIResponse.objects.filter(
+            Q(email_intent__email__email_account__user=request.user) |
+            Q(email_intent__email__gmail_account__user=request.user),
+            status='sent'
+        ).select_related('email_intent__email').order_by('-sent_at')[:50]
 
-            approved_responses = AIResponse.objects.filter(
-                Q(email_intent__email__email_account__user=request.user) |
-                Q(email_intent__email__gmail_account__user=request.user),
-                status='approved'
-            ).select_related('email_intent__email').order_by('-approved_at')
+        approved_responses = AIResponse.objects.filter(
+            Q(email_intent__email__email_account__user=request.user) |
+            Q(email_intent__email__gmail_account__user=request.user),
+            status='approved'
+        ).select_related('email_intent__email').order_by('-approved_at')
 
-            rejected_responses = AIResponse.objects.filter(
-                Q(email_intent__email__email_account__user=request.user) |
-                Q(email_intent__email__gmail_account__user=request.user),
-                status='rejected'
-            ).select_related('email_intent__email').order_by('-generated_at')[:20]
+        rejected_responses = AIResponse.objects.filter(
+            Q(email_intent__email__email_account__user=request.user) |
+            Q(email_intent__email__gmail_account__user=request.user),
+            status='rejected'
+        ).select_related('email_intent__email').order_by('-generated_at')[:20]
 
-            # Calcular estadísticas para el resumen
-            email_accounts = EmailAccount.objects.filter(user=request.user)
-            gmail_accounts = GmailAccount.objects.filter(user=request.user)
+        # Calcular estadísticas para el resumen
+        email_accounts = EmailAccount.objects.filter(user=request.user)
+        gmail_accounts = GmailAccount.objects.filter(user=request.user)
 
-            total_emails = Email.objects.filter(
-                Q(email_account__in=email_accounts) | Q(gmail_account__in=gmail_accounts)
-            ).count()
+        total_emails = Email.objects.filter(
+            Q(email_account__in=email_accounts) | Q(gmail_account__in=gmail_accounts)
+        ).count()
 
-            responded_emails = EmailIntent.objects.filter(
-                Q(email__email_account__in=email_accounts) |
-                Q(email__gmail_account__in=gmail_accounts),
-                airesponse__isnull=False
-            ).distinct().count()
+        responded_emails = EmailIntent.objects.filter(
+            Q(email__email_account__in=email_accounts) |
+            Q(email__gmail_account__in=gmail_accounts),
+            airesponse__isnull=False
+        ).distinct().count()
 
-            context = {
-                'ai_context': ai_context,
-                'pending_responses': pending_responses,
-                'sent_responses': sent_responses,
-                'approved_responses': approved_responses,
-                'rejected_responses': rejected_responses,
-                'has_pending': pending_responses.exists(),
-                'has_sent': sent_responses.exists(),
-                'has_ai_config': True,
-                'total_emails': total_emails,
-                'responded_emails': responded_emails,
-            }
-        else:
-            context = {
-                'has_ai_config': False,
-                'ai_context': None,
-                'pending_responses': [],
-                'sent_responses': [],
-                'approved_responses': [],
-                'rejected_responses': [],
-                'has_pending': False,
-                'has_sent': False,
-                'total_emails': 0,
-                'responded_emails': 0,
-            }
+        context = {
+            'ai_role': ai_role,
+            'pending_responses': pending_responses,
+            'sent_responses': sent_responses,
+            'approved_responses': approved_responses,
+            'rejected_responses': rejected_responses,
+            'has_pending': pending_responses.exists(),
+            'has_sent': sent_responses.exists(),
+            'has_ai_role': True,
+            'total_emails': total_emails,
+            'responded_emails': responded_emails,
+        }
+
+    except AIRole.DoesNotExist:
+        logger.warning(f"No active AI role for user {request.user.username}")
+        context = {
+            'has_ai_role': False,
+            'ai_role': None,
+            'pending_responses': [],
+            'sent_responses': [],
+            'approved_responses': [],
+            'rejected_responses': [],
+            'has_pending': False,
+            'has_sent': False,
+            'total_emails': 0,
+            'responded_emails': 0,
+        }
 
     except Exception as e:
         logger.error(f"Error in ai_responses for user {request.user.username}: {e}")
         context = {
-            'has_ai_config': False,
-            'ai_context': None,
+            'has_ai_role': False,
+            'ai_role': None,
             'pending_responses': [],
             'sent_responses': [],
             'approved_responses': [],

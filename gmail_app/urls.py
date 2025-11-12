@@ -34,13 +34,7 @@ urlpatterns = [
     path('api/logs/', views.system_logs, name='system_logs'),
     path('clear-oauth-session/', views.clear_oauth_session, name='clear_oauth_session'),
     
-    # AI Configuration (Legacy - AIContext)
-    path('ai-config/', views.ai_config, name='ai_config'),
-    path('ai-context/save/', views.ai_context_save, name='ai_context_save'),
-    path('temporal-rule/save/', views.temporal_rule_save, name='temporal_rule_save'),
-    path('temporal-rule/delete/<int:rule_id>/', views.temporal_rule_delete, name='temporal_rule_delete'),
-
-    # AI Roles (New - Multiple Roles per User)
+    # AI Roles
     path('ai-roles/', views.ai_roles_list, name='ai_roles_list'),
     path('ai-roles/create/', views.ai_role_create, name='ai_role_create'),
     path('ai-roles/<int:role_id>/edit/', views.ai_role_edit, name='ai_role_edit'),
