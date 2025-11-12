@@ -1,7 +1,11 @@
 from django.apps import AppConfig
 import logging
+import os
 
 logger = logging.getLogger('gmail_app')
+
+# Variable global para evitar múltiples inicios del scheduler
+_scheduler_initialized = False
 
 
 class GmailAppConfig(AppConfig):
@@ -13,11 +17,25 @@ class GmailAppConfig(AppConfig):
         Se ejecuta cuando Django inicia
         Aquí iniciamos el scheduler para sincronización automática
         """
+        global _scheduler_initialized
+
         from django.conf import settings
+
+        # Evitar que StatReloader de Django inicie el scheduler múltiples veces
+        # Solo iniciar si:
+        # 1. No ha sido inicializado aún
+        # 2. No estamos en el proceso reloader de Django
+        if _scheduler_initialized:
+            return
+
+        # Verificar si estamos en el proceso main (no en reloader)
+        if os.environ.get('RUN_MAIN') != 'true':
+            return
 
         # Solo iniciar el scheduler si está configurado
         if getattr(settings, 'SCHEDULER_AUTOSTART', False):
             self.start_scheduler()
+            _scheduler_initialized = True
 
     def start_scheduler(self):
         """Inicia el scheduler de APScheduler"""
