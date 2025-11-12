@@ -566,20 +566,16 @@
     </div>
     {% endfor %}
 
-    <!-- Add more accounts -->
+    <!-- Add more accounts (allow multiple accounts per provider) -->
     <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; display: flex; gap: 1rem;">
-        {% if not has_gmail or gmail_accounts.count == 0 %}
         <a href="{% url 'connect_gmail' %}" class="connect-btn" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">
             <i class="fab fa-google"></i>
-            <span>Add Gmail</span>
+            <span>Add Gmail Account</span>
         </a>
-        {% endif %}
-        {% if not has_outlook or outlook_accounts.count == 0 %}
         <a href="{% url 'connect_outlook' %}" class="connect-btn" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">
             <i class="fab fa-microsoft"></i>
-            <span>Add Outlook</span>
+            <span>Add Outlook Account</span>
         </a>
-        {% endif %}
     </div>
 </div>
 
