@@ -238,11 +238,12 @@ def sync_emails_api(request):
         gmail_service = GmailService(request.user)
         synced_emails = gmail_service.sync_emails()
 
-        # Check if user has AI processing enabled
+        # Check if user has AI processing enabled (supports both AIRole and AIContext)
         try:
-            ai_context = AIContext.objects.get(user=request.user, is_active=True)
+            # Try to get active AIRole (new system) first, then fall back to AIContext
+            ai_context = AIRole.get_active_role(request.user)
 
-            if synced_emails:
+            if ai_context and synced_emails:
                 # Process new emails with AI
                 ai_processor = EmailAIProcessor()
                 processed_count = 0
@@ -270,12 +271,13 @@ def sync_emails_api(request):
             else:
                 return JsonResponse({
                     'success': True,
-                    'synced': 0,
-                    'message': '✅ No new emails to sync',
-                    'ai_enabled': True
+                    'synced': len(synced_emails),
+                    'message': f'✅ Synced {len(synced_emails)} new emails successfully!',
+                    'ai_enabled': False
                 })
 
-        except AIContext.DoesNotExist:
+        except Exception as e:
+            logger.error(f"Error getting AI context for user {request.user.username}: {e}")
             return JsonResponse({
                 'success': True,
                 'synced': len(synced_emails),
@@ -548,46 +550,64 @@ def temporal_rule_delete(request, rule_id):
 
 @login_required
 def ai_responses(request):
-    """View and manage AI responses"""
+    """View and manage AI responses - supports both AIRole and AIContext"""
+    from django.db.models import Q
+
     try:
-        ai_context = AIContext.objects.get(user=request.user)
+        # Get active AI configuration (AIRole or AIContext)
+        ai_context = AIRole.get_active_role(request.user)
+        has_ai_config = ai_context is not None
 
-        # Get pending responses
-        pending_responses = AIResponse.objects.filter(
-            email_intent__email__gmail_account__user=request.user,
-            status='pending_approval'
-        ).select_related('email_intent__email').order_by('-generated_at')
+        if has_ai_config:
+            # Build query to get responses from both email_account and gmail_account
+            pending_responses = AIResponse.objects.filter(
+                Q(email_intent__email__email_account__user=request.user) |
+                Q(email_intent__email__gmail_account__user=request.user),
+                status='pending_approval'
+            ).select_related('email_intent__email').order_by('-generated_at')
 
-        # Get sent responses
-        sent_responses = AIResponse.objects.filter(
-            email_intent__email__gmail_account__user=request.user,
-            status='sent'
-        ).select_related('email_intent__email').order_by('-sent_at')[:50]
+            sent_responses = AIResponse.objects.filter(
+                Q(email_intent__email__email_account__user=request.user) |
+                Q(email_intent__email__gmail_account__user=request.user),
+                status='sent'
+            ).select_related('email_intent__email').order_by('-sent_at')[:50]
 
-        # Get approved but not sent responses
-        approved_responses = AIResponse.objects.filter(
-            email_intent__email__gmail_account__user=request.user,
-            status='approved'
-        ).select_related('email_intent__email').order_by('-approved_at')
+            approved_responses = AIResponse.objects.filter(
+                Q(email_intent__email__email_account__user=request.user) |
+                Q(email_intent__email__gmail_account__user=request.user),
+                status='approved'
+            ).select_related('email_intent__email').order_by('-approved_at')
 
-        # Get rejected responses
-        rejected_responses = AIResponse.objects.filter(
-            email_intent__email__gmail_account__user=request.user,
-            status='rejected'
-        ).select_related('email_intent__email').order_by('-generated_at')[:20]
+            rejected_responses = AIResponse.objects.filter(
+                Q(email_intent__email__email_account__user=request.user) |
+                Q(email_intent__email__gmail_account__user=request.user),
+                status='rejected'
+            ).select_related('email_intent__email').order_by('-generated_at')[:20]
 
-        context = {
-            'ai_context': ai_context,
-            'pending_responses': pending_responses,
-            'sent_responses': sent_responses,
-            'approved_responses': approved_responses,
-            'rejected_responses': rejected_responses,
-            'has_pending': pending_responses.exists(),
-            'has_sent': sent_responses.exists(),
-            'has_ai_config': True
-        }
+            context = {
+                'ai_context': ai_context,
+                'pending_responses': pending_responses,
+                'sent_responses': sent_responses,
+                'approved_responses': approved_responses,
+                'rejected_responses': rejected_responses,
+                'has_pending': pending_responses.exists(),
+                'has_sent': sent_responses.exists(),
+                'has_ai_config': True
+            }
+        else:
+            context = {
+                'has_ai_config': False,
+                'ai_context': None,
+                'pending_responses': [],
+                'sent_responses': [],
+                'approved_responses': [],
+                'rejected_responses': [],
+                'has_pending': False,
+                'has_sent': False
+            }
 
-    except AIContext.DoesNotExist:
+    except Exception as e:
+        logger.error(f"Error in ai_responses for user {request.user.username}: {e}")
         context = {
             'has_ai_config': False,
             'ai_context': None,
@@ -596,7 +616,8 @@ def ai_responses(request):
             'approved_responses': [],
             'rejected_responses': [],
             'has_pending': False,
-            'has_sent': False
+            'has_sent': False,
+            'error': str(e)
         }
 
     return render(request, 'gmail_app/ai_responses.html', context)

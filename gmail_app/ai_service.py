@@ -194,7 +194,10 @@ Analyze the intent and decide if this should be automatically responded to or es
     
     def _build_response_system_prompt(self, ai_context: AIContext, matched_rule: TemporalRule = None) -> str:
         """Build system prompt for response generation"""
-        
+
+        # Get role name (AIRole uses 'name', AIContext uses 'role')
+        role_name = getattr(ai_context, 'name', None) or getattr(ai_context, 'role', 'AI Assistant')
+
         rule_info = ""
         if matched_rule:
             rule_info = f"""
@@ -202,10 +205,10 @@ SPECIFIC RULE MATCHED: {matched_rule.name}
 RULE DESCRIPTION: {matched_rule.description}
 RULE TEMPLATE: {matched_rule.response_template}
 """
-        
+
         return f"""You are an AI assistant responding to emails on behalf of:
 
-ROLE: {ai_context.role}
+ROLE: {role_name}
 CONTEXT: {ai_context.context_description}
 
 {rule_info}
