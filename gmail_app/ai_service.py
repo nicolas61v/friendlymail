@@ -11,7 +11,7 @@ from django.conf import settings
 from django.utils import timezone as django_timezone
 from openai import OpenAI
 
-from .ai_models import AIContext, TemporalRule, EmailIntent, AIResponse
+from .ai_models import AIContext, AIRole, TemporalRule, EmailIntent, AIResponse
 from .models import Email
 
 logger = logging.getLogger('gmail_app')
@@ -212,24 +212,46 @@ class EmailAIProcessor:
     def process_email(self, email: Email) -> Tuple[EmailIntent, AIResponse]:
         """
         Process a single email through the AI pipeline
-        
+
+        Uses the currently active AIRole if available, falls back to AIContext for backward compatibility.
+
         Returns:
             Tuple of (EmailIntent, AIResponse or None)
         """
         logger.info(f"Processing email: {email.subject[:50]} from {email.sender}")
-        
+
         try:
-            # Get user's AI context
-            ai_context = AIContext.objects.get(user=email.gmail_account.user, is_active=True)
-        except AIContext.DoesNotExist:
-            logger.warning(f"No active AI context for user {email.gmail_account.user.username}")
+            # Get user (support both email_account and legacy gmail_account)
+            user = email.email_account.user if email.email_account else email.gmail_account.user
+
+            # Try to get active AIRole (new system)
+            ai_context = AIRole.get_active_role(user)
+
+            if ai_context is None:
+                raise AIContext.DoesNotExist("No active AI role or context")
+
+            logger.info(f"Using {'AIRole' if isinstance(ai_context, AIRole) else 'AIContext'} for user {user.username}")
+
+        except (AIContext.DoesNotExist, AIRole.DoesNotExist):
+            logger.warning(f"No active AI role or context for user {user.username}")
             # Create basic intent for unprocessed email
             intent = EmailIntent.objects.create(
                 email=email,
                 intent_type='unclear',
                 confidence_score=0.0,
                 ai_decision='escalate',
-                decision_reason='No AI context configured',
+                decision_reason='No AI role or context configured',
+                processing_time_ms=0
+            )
+            return intent, None
+        except Exception as e:
+            logger.error(f"Error getting AI context for email {email.id}: {e}")
+            intent = EmailIntent.objects.create(
+                email=email,
+                intent_type='unclear',
+                confidence_score=0.0,
+                ai_decision='escalate',
+                decision_reason=f'Error loading AI configuration: {str(e)}',
                 processing_time_ms=0
             )
             return intent, None
@@ -291,26 +313,39 @@ class EmailAIProcessor:
         
         return intent, ai_response
     
-    def _find_matching_rule(self, email: Email, ai_context: AIContext, analysis: Dict) -> TemporalRule:
-        """Find matching temporal rule for the email"""
-        
+    def _find_matching_rule(self, email: Email, ai_context, analysis: Dict) -> TemporalRule:
+        """
+        Find matching temporal rule for the email.
+
+        Supports both AIRole and AIContext (backward compatibility).
+        """
+
         now = django_timezone.now()
-        
-        # Get active rules for this context
-        active_rules = TemporalRule.objects.filter(
-            ai_context=ai_context,
-            status='active',
-            start_date__lte=now,
-            end_date__gte=now
-        ).order_by('-priority')
-        
+
+        # Build query based on context type (AIRole or AIContext)
+        if isinstance(ai_context, AIRole):
+            active_rules = TemporalRule.objects.filter(
+                ai_role=ai_context,
+                status='active',
+                start_date__lte=now,
+                end_date__gte=now
+            ).order_by('-priority')
+        else:
+            # Legacy AIContext
+            active_rules = TemporalRule.objects.filter(
+                ai_context=ai_context,
+                status='active',
+                start_date__lte=now,
+                end_date__gte=now
+            ).order_by('-priority')
+
         for rule in active_rules:
             # Check if email content matches rule keywords
             email_content = f"{email.subject} {email.body_plain}".lower()
             keywords = [kw.strip().lower() for kw in rule.keywords.split(',') if kw.strip()]
-            
+
             if any(keyword in email_content for keyword in keywords):
                 logger.info(f"Email matched temporal rule: {rule.name}")
                 return rule
-        
+
         return None

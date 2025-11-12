@@ -9,7 +9,7 @@ from django.utils import timezone
 from gmail_app.models import GmailAccount, Email
 from gmail_app.gmail_service import GmailService
 from gmail_app.ai_service import EmailAIProcessor
-from gmail_app.ai_models import AIContext
+from gmail_app.ai_models import AIContext, AIRole
 from gmail_app.exceptions import RefreshTokenInvalidError, GmailAPIError
 
 logger = logging.getLogger('gmail_app')
@@ -80,12 +80,20 @@ class Command(BaseCommand):
 
             # Procesar con IA si está configurado
             try:
-                ai_context = AIContext.objects.get(user=user, is_active=True)
+                # Try to get active AIRole (new system), fall back to AIContext (legacy)
+                ai_context = AIRole.get_active_role(user)
+
+                if not ai_context:
+                    logger.info(f"No active AI role or context for user {user.username}, skipping AI processing")
+                    return
+
                 ai_processor = EmailAIProcessor()
 
                 processed_count = 0
                 responses_generated = 0
                 auto_sent = 0
+
+                logger.info(f"Processing emails with {'AIRole' if isinstance(ai_context, AIRole) else 'AIContext'}: {ai_context}")
 
                 for email in synced_emails:
                     try:
