@@ -355,5 +355,7 @@ class GmailService:
             return sent_message['id']
             
         except Exception as e:
-            logger.error(f"Error sending email to {to_email}: {e}")
-            raise GmailAPIError(f"Failed to send email: {str(e)}")
+            error_msg = str(e) if str(e) else type(e).__name__
+            logger.error(f"Error sending email to {to_email}: {error_msg}")
+            logger.exception("Stack trace:")  # Log full stack trace for debugging
+            raise GmailAPIError(f"Failed to send email: {error_msg}")

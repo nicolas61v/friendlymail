@@ -1491,7 +1491,7 @@ def get_all_emails_with_ai_status(request):
 
         emails = Email.objects.filter(
             Q(email_account__in=email_accounts) | Q(gmail_account__in=gmail_accounts)
-        ).select_related('emailintent').order_by('-received_date')
+        ).order_by('-received_date')
 
         # Preparar datos para la tabla
         email_data = []
