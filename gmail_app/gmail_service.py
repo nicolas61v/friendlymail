@@ -92,7 +92,7 @@ class GmailService:
         
         logger.info(f"Successfully authenticated Gmail for user {self.user.username}, email: {profile['emailAddress']}")
         
-        # Save or update Gmail account
+        # Save or update Gmail account (legacy model for backward compatibility)
         gmail_account, created = GmailAccount.objects.update_or_create(
             user=self.user,
             defaults={
@@ -102,7 +102,23 @@ class GmailService:
                 'token_expires_at': datetime.fromtimestamp(credentials.expiry.timestamp(), tz=timezone.utc)
             }
         )
-        
+
+        # ALSO create/update unified EmailAccount model (required for new multi-account system)
+        email_account, ea_created = EmailAccount.objects.update_or_create(
+            user=self.user,
+            email=profile['emailAddress'],
+            provider='gmail',
+            defaults={
+                'access_token': credentials.token,
+                'refresh_token': credentials.refresh_token,
+                'token_expires_at': datetime.fromtimestamp(credentials.expiry.timestamp(), tz=timezone.utc),
+                'is_active': True
+            }
+        )
+
+        action = "connected" if ea_created else "updated"
+        logger.info(f"EmailAccount {action} for user {self.user.username}: {email_account.email} ({email_account.provider})")
+
         return gmail_account
     
     def get_credentials(self):
