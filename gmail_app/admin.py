@@ -1,6 +1,14 @@
 from django.contrib import admin
-from .models import GmailAccount, Email
+from .models import EmailAccount, GmailAccount, Email
 from .ai_models import AIContext, TemporalRule, EmailIntent, AIResponse, AIStats
+
+
+@admin.register(EmailAccount)
+class EmailAccountAdmin(admin.ModelAdmin):
+    list_display = ['email', 'provider', 'user', 'is_active', 'created_at']
+    list_filter = ['provider', 'is_active', 'created_at']
+    readonly_fields = ['access_token', 'refresh_token']
+    search_fields = ['email', 'user__username']
 
 
 @admin.register(GmailAccount)
@@ -12,10 +20,14 @@ class GmailAccountAdmin(admin.ModelAdmin):
 
 @admin.register(Email)
 class EmailAdmin(admin.ModelAdmin):
-    list_display = ['subject', 'sender', 'gmail_account', 'received_date', 'is_read']
+    list_display = ['subject', 'sender', 'email_account', 'received_date', 'is_read']
     list_filter = ['is_read', 'is_important', 'received_date']
     search_fields = ['subject', 'sender', 'body_plain']
-    readonly_fields = ['gmail_id', 'thread_id']
+    readonly_fields = ['provider_id', 'thread_id', 'created_at']
+
+    def get_queryset(self, request):
+        # Optimize with select_related
+        return super().get_queryset(request).select_related('email_account', 'gmail_account')
 
 
 @admin.register(AIContext)

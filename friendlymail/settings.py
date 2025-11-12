@@ -124,15 +124,15 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Gmail API Configuration
+# ========== GMAIL API CONFIGURATION ==========
 GOOGLE_OAUTH2_CLIENT_ID = os.environ.get('GOOGLE_OAUTH2_CLIENT_ID')
 GOOGLE_OAUTH2_CLIENT_SECRET = os.environ.get('GOOGLE_OAUTH2_CLIENT_SECRET')
+GOOGLE_OAUTH2_REDIRECT_URI = os.environ.get(
+    'GOOGLE_OAUTH2_REDIRECT_URI',
+    'http://localhost:8000/gmail/callback/'
+)
 
-# OpenAI Configuration
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')  # More cost-effective for email analysis
-
-# Gmail API Scopes  
+# Gmail API Scopes
 GMAIL_SCOPES = [
     'openid',  # Required for OAuth2
     'https://www.googleapis.com/auth/gmail.readonly',
@@ -140,6 +140,33 @@ GMAIL_SCOPES = [
     'https://www.googleapis.com/auth/gmail.send',  # Send emails
     'https://www.googleapis.com/auth/userinfo.email'  # Get user email reliably
 ]
+
+# ========== OUTLOOK/MICROSOFT GRAPH API CONFIGURATION ==========
+OUTLOOK_CLIENT_ID = os.environ.get('OUTLOOK_CLIENT_ID')
+OUTLOOK_CLIENT_SECRET = os.environ.get('OUTLOOK_CLIENT_SECRET')
+OUTLOOK_TENANT_ID = os.environ.get('OUTLOOK_TENANT_ID', 'common')  # 'common' allows any Microsoft account
+OUTLOOK_REDIRECT_URI = os.environ.get(
+    'OUTLOOK_REDIRECT_URI',
+    'http://localhost:8000/outlook/callback/'
+)
+
+# Authority URL for Microsoft authentication
+OUTLOOK_AUTHORITY = f"https://login.microsoftonline.com/{OUTLOOK_TENANT_ID}"
+
+# Microsoft Graph API Scopes (delegated permissions)
+OUTLOOK_SCOPES = [
+    'openid',
+    'email',
+    'profile',
+    'offline_access',  # Required for refresh token
+    'https://graph.microsoft.com/Mail.Read',
+    'https://graph.microsoft.com/Mail.Send',
+    'https://graph.microsoft.com/Mail.ReadWrite',
+]
+
+# ========== AI/LLM CONFIGURATION ==========
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')  # More cost-effective for email analysis
 
 # Authentication Settings
 LOGIN_URL = 'login'
