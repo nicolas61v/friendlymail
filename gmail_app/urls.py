@@ -34,12 +34,21 @@ urlpatterns = [
     path('api/logs/', views.system_logs, name='system_logs'),
     path('clear-oauth-session/', views.clear_oauth_session, name='clear_oauth_session'),
     
-    # AI Configuration
+    # AI Configuration (Legacy - AIContext)
     path('ai-config/', views.ai_config, name='ai_config'),
     path('ai-context/save/', views.ai_context_save, name='ai_context_save'),
     path('temporal-rule/save/', views.temporal_rule_save, name='temporal_rule_save'),
     path('temporal-rule/delete/<int:rule_id>/', views.temporal_rule_delete, name='temporal_rule_delete'),
-    
+
+    # AI Roles (New - Multiple Roles per User)
+    path('ai-roles/', views.ai_roles_list, name='ai_roles_list'),
+    path('ai-roles/create/', views.ai_role_create, name='ai_role_create'),
+    path('ai-roles/<int:role_id>/edit/', views.ai_role_edit, name='ai_role_edit'),
+    path('ai-roles/<int:role_id>/activate/', views.ai_role_activate, name='ai_role_activate'),
+    path('ai-roles/<int:role_id>/delete/', views.ai_role_delete, name='ai_role_delete'),
+    path('ai-roles/<int:role_id>/rule/save/', views.ai_role_temporal_rule_save, name='ai_role_temporal_rule_save'),
+    path('ai-roles/<int:role_id>/rule/<int:rule_id>/delete/', views.ai_role_temporal_rule_delete, name='ai_role_temporal_rule_delete'),
+
     # AI Responses
     path('ai-responses/', views.ai_responses, name='ai_responses'),
     path('response/approve/<int:response_id>/', views.approve_response, name='approve_response'),

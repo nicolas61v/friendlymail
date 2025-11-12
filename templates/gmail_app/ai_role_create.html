@@ -1,0 +1,416 @@
+{% extends 'gmail_app/base_dashboard.html' %}
+
+{% block title %}Create AI Role - FriendlyMail{% endblock %}
+
+{% block page_icon %}<i class="fas fa-plus-circle" style="color: #9c27b0; margin-right: 0.5rem;"></i>{% endblock %}
+{% block page_title %}Create New AI Role{% endblock %}
+
+{% block extra_styles %}
+.form-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section h3 {
+    color: #2d3748;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #9c27b0;
+    box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-group small {
+    display: block;
+    color: #718096;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.form-hint {
+    background: #f0f4ff;
+    border-left: 4px solid #9c27b0;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 0.75rem;
+    color: #5e35b1;
+    font-size: 0.9rem;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+}
+
+.checkbox-group label {
+    margin-bottom: 0;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    border: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    color: white;
+    min-width: 150px;
+    justify-content: center;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(156, 39, 176, 0.3);
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #2d3748;
+    min-width: 150px;
+    justify-content: center;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+.example-box {
+    background: #f8f9fa;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.example-box h4 {
+    margin-top: 0;
+    color: #2d3748;
+    font-size: 0.9rem;
+}
+
+.example-box ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.example-box li {
+    margin-bottom: 0.5rem;
+}
+
+.breadcrumb {
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+}
+
+.breadcrumb a {
+    color: #9c27b0;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.step-indicator {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #718096;
+}
+
+.step.active {
+    color: #9c27b0;
+    font-weight: 600;
+}
+
+.step::before {
+    content: '';
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: #cbd5e0;
+}
+
+.step.active::before {
+    background: #9c27b0;
+    border-color: #9c27b0;
+    color: white;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .form-card {
+        padding: 1.5rem;
+    }
+
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+}
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'ai_roles_list' %}"><i class="fas fa-arrow-left"></i> Back to Roles</a>
+</div>
+
+<div class="step-indicator">
+    <div class="step active">
+        <span>1. Role Basics</span>
+    </div>
+    <div class="step">
+        <span>2. Configuration</span>
+    </div>
+    <div class="step">
+        <span>3. Ready!</span>
+    </div>
+</div>
+
+<div class="form-card">
+    <h2 style="color: #2d3748; margin-top: 0;">
+        <i class="fas fa-theater-masks"></i> Create New AI Role
+    </h2>
+    <p style="color: #718096; margin-bottom: 2rem;">
+        Define a new AI role with its own configuration, rules, and auto-send settings.
+    </p>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- Basic Information -->
+        <div class="form-section">
+            <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
+
+            <div class="form-group">
+                <label for="name">Role Name *</label>
+                <input type="text" id="name" name="name" placeholder="e.g., Professor, Coordinator, Director" required>
+                <small>Choose a descriptive name for this role. You'll use this to identify and switch between roles.</small>
+                <div class="example-box">
+                    <h4>Examples:</h4>
+                    <ul>
+                        <li>👨‍🏫 Professor</li>
+                        <li>👨‍💼 Coordinator</li>
+                        <li>👔 Director</li>
+                        <li>💻 Tech Support Manager</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="context_description">Role Description *</label>
+                <textarea id="context_description" name="context_description" placeholder="Describe what this role does and its context..." required></textarea>
+                <small>This helps the AI understand the context and generate appropriate responses.</small>
+                <div class="example-box">
+                    <h4>Example:</h4>
+                    <ul>
+                        <li>"I am a Computer Science professor at EAFIT University. I teach courses on algorithms and data structures. I answer student questions about exams, course material, and assignments."</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Complexity & Settings -->
+        <div class="form-section">
+            <h3><i class="fas fa-sliders-h"></i> Configuration Level</h3>
+
+            <div class="form-group">
+                <label for="complexity_level">Complexity Level</label>
+                <select id="complexity_level" name="complexity_level">
+                    <option value="simple">Simple - Basic context only</option>
+                    <option value="medium">Medium - Context + filters + keywords</option>
+                    <option value="advanced">Advanced - Full customization</option>
+                </select>
+                <small>This determines how much control you have over AI behavior.</small>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="auto_send" name="auto_send">
+                    <label for="auto_send">Enable Auto-send for this role</label>
+                </div>
+                <small>If enabled, the AI will automatically send responses without waiting for approval.</small>
+            </div>
+        </div>
+
+        <!-- Responsive Topics -->
+        <div class="form-section">
+            <h3><i class="fas fa-check-circle"></i> Topics This Role Can Respond To</h3>
+
+            <div class="form-group">
+                <label for="can_respond_topics">Response Topics</label>
+                <textarea id="can_respond_topics" name="can_respond_topics" placeholder="List topics AI can respond to (one per line)"></textarea>
+                <small>Examples: exam dates, class schedules, assignment deadlines, grading policies, etc.</small>
+                <div class="example-box">
+                    <h4>Examples:</h4>
+                    <ul>
+                        <li>Exam information and dates</li>
+                        <li>Course schedule and meeting times</li>
+                        <li>Assignment deadlines</li>
+                        <li>Grading policies</li>
+                        <li>Technical course materials</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="cannot_respond_topics">Topics to Escalate</label>
+                <textarea id="cannot_respond_topics" name="cannot_respond_topics" placeholder="List topics AI should escalate to you (one per line)"></textarea>
+                <small>These will be marked as "escalate" and you'll be notified for manual handling.</small>
+                <div class="example-box">
+                    <h4>Examples:</h4>
+                    <ul>
+                        <li>Student grade disputes</li>
+                        <li>Personal/medical issues</li>
+                        <li>Accommodation requests</li>
+                        <li>Complex administrative matters</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtering -->
+        <div class="form-section">
+            <h3><i class="fas fa-filter"></i> Email Filtering</h3>
+
+            <div class="form-group">
+                <label for="allowed_domains">Allowed Domains (Optional)</label>
+                <textarea id="allowed_domains" name="allowed_domains" placeholder="Email domains to process (one per line)"></textarea>
+                <small>Leave empty to process all domains. Useful to limit responses to @company.com only.</small>
+                <div class="example-box">
+                    <h4>Examples:</h4>
+                    <ul>
+                        <li>@eafit.edu.co</li>
+                        <li>@gmail.com</li>
+                        <li>@company.com</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <a href="{% url 'ai_roles_list' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Create Role
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Info Section -->
+<div style="margin-top: 3rem; padding: 2rem; background: #f0f4ff; border-radius: 12px; border-left: 4px solid #9c27b0; text-align: center;">
+    <h3 style="color: #5e35b1; margin-top: 0;">
+        <i class="fas fa-lightbulb"></i> Tip
+    </h3>
+    <p style="color: #6a5acd; margin: 0;">
+        You can edit this role's configuration after creation, including adding temporal rules (time-based responses like "Exam Info from Nov 1-15").
+    </p>
+</div>
+{% endblock %}
