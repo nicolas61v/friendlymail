@@ -6,10 +6,10 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block top_bar_actions %}
-    {% if has_gmail %}
-    <button class="sync-button" onclick="syncEmails()">
+    {% if has_accounts %}
+    <button class="sync-button" onclick="syncAllAccounts()">
         <i class="fas fa-sync"></i>
-        <span>Sync Now</span>
+        <span>Sync All</span>
     </button>
     {% endif %}
 {% endblock %}
@@ -64,6 +64,11 @@
     color: white;
 }
 
+.stat-icon.purple {
+    background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+    color: white;
+}
+
 .stat-info h3 {
     font-size: 1.75rem;
     font-weight: 700;
@@ -75,6 +80,214 @@
     font-size: 0.9rem;
     color: #718096;
     margin: 0;
+}
+
+/* Connect Providers Section */
+.connect-providers {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.connect-providers h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1.5rem;
+}
+
+.providers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.provider-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.provider-card:hover {
+    border-color: #4285f4;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.provider-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.provider-icon.gmail {
+    color: #ea4335;
+}
+
+.provider-icon.outlook {
+    color: #0078d4;
+}
+
+.provider-card h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.provider-card p {
+    color: #718096;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.connect-btn {
+    background: linear-gradient(135deg, #34a853 0%, #2d8f46 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.connect-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(52, 168, 83, 0.4);
+    color: white;
+}
+
+/* Connected Accounts List */
+.connected-accounts {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.connected-accounts h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.account-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.account-item:hover {
+    background: #f8f9fa;
+    border-color: #cbd5e0;
+}
+
+.account-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.account-provider-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.account-provider-badge.gmail {
+    background: #fef3f2;
+    color: #ea4335;
+}
+
+.account-provider-badge.outlook {
+    background: #eff6ff;
+    color: #0078d4;
+}
+
+.account-details h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 0.25rem 0;
+}
+
+.account-details p {
+    font-size: 0.85rem;
+    color: #718096;
+    margin: 0;
+}
+
+.account-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.account-actions button {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-disconnect {
+    background: #fee;
+    color: #c53030;
+}
+
+.btn-disconnect:hover {
+    background: #fdd;
+}
+
+/* Email Provider Badge */
+.email-provider-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+.email-provider-badge.gmail {
+    background: #fef3f2;
+    color: #ea4335;
+}
+
+.email-provider-badge.outlook {
+    background: #eff6ff;
+    color: #0078d4;
+}
+
+.email-provider-badge i {
+    font-size: 0.8rem;
 }
 
 /* Email Card */
@@ -135,6 +348,8 @@
     color: #2d3748;
     font-size: 1rem;
     margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
 }
 
 .email-subject a {
@@ -196,84 +411,51 @@
     opacity: 0.5;
 }
 
-/* Connect Gmail State */
-.connect-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: calc(100vh - 200px);
-}
-
-.connect-card {
-    background: white;
-    padding: 3rem;
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    max-width: 500px;
-}
-
-.connect-icon {
-    font-size: 5rem;
-    color: #4285f4;
-    margin-bottom: 1.5rem;
-}
-
-.connect-card h2 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #2d3748;
-    margin-bottom: 1rem;
-}
-
-.connect-card p {
-    color: #718096;
-    margin-bottom: 2rem;
-    font-size: 1rem;
-}
-
-.connect-button {
-    background: linear-gradient(135deg, #34a853 0%, #2d8f46 100%);
-    color: white;
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    text-decoration: none;
-}
-
-.connect-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(52, 168, 83, 0.4);
-    color: white;
-}
-
 @media (max-width: 968px) {
     .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    .providers-grid {
         grid-template-columns: 1fr;
     }
 }
 {% endblock %}
 
 {% block content %}
-{% if not has_gmail %}
-<div class="connect-state">
-    <div class="connect-card">
-        <div class="connect-icon">
-            <i class="fab fa-google"></i>
+{% if not has_accounts %}
+<!-- No accounts connected - Show connect options -->
+<div class="connect-providers">
+    <h3><i class="fas fa-plug"></i> Connect Your Email Accounts</h3>
+    <p style="color: #718096; margin-bottom: 1.5rem;">
+        Connect Gmail, Outlook, or both to manage all your emails in one place.
+    </p>
+
+    <div class="providers-grid">
+        <!-- Gmail Card -->
+        <div class="provider-card">
+            <div class="provider-icon gmail">
+                <i class="fab fa-google"></i>
+            </div>
+            <h4>Gmail</h4>
+            <p>Connect your personal or Google Workspace account</p>
+            <a href="{% url 'connect_gmail' %}" class="connect-btn">
+                <i class="fab fa-google"></i>
+                <span>Connect Gmail</span>
+            </a>
         </div>
-        <h2>Connect Your Gmail Account</h2>
-        <p>To view your emails, please connect your Gmail account using secure OAuth2 authentication.</p>
-        <a href="{% url 'connect_gmail' %}" class="connect-button">
-            <i class="fab fa-google"></i>
-            <span>Connect Gmail Account</span>
-        </a>
+
+        <!-- Outlook Card -->
+        <div class="provider-card">
+            <div class="provider-icon outlook">
+                <i class="fab fa-microsoft"></i>
+            </div>
+            <h4>Outlook / Office 365</h4>
+            <p>Connect your Microsoft or Office 365 account</p>
+            <a href="{% url 'connect_outlook' %}" class="connect-btn">
+                <i class="fab fa-microsoft"></i>
+                <span>Connect Outlook</span>
+            </a>
+        </div>
     </div>
 </div>
 {% else %}
@@ -284,44 +466,74 @@
             <i class="fas fa-envelope"></i>
         </div>
         <div class="stat-info">
-            <h3>{{ emails.count }}</h3>
+            <h3>{{ total_emails }}</h3>
             <p>Total Emails</p>
         </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon green">
-            <i class="fas fa-check-circle"></i>
+            <i class="fab fa-google"></i>
         </div>
         <div class="stat-info">
-            <h3>Connected</h3>
-            <p>Gmail Status</p>
+            <h3>{{ gmail_accounts.count }}</h3>
+            <p>Gmail Account{{ gmail_accounts.count|pluralize }}</p>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-clock"></i>
+        <div class="stat-icon purple">
+            <i class="fab fa-microsoft"></i>
         </div>
         <div class="stat-info">
-            <h3>{{ gmail_account.updated_at|date:"M d" }}</h3>
-            <p>Last Synced</p>
+            <h3>{{ outlook_accounts.count }}</h3>
+            <p>Outlook Account{{ outlook_accounts.count|pluralize }}</p>
         </div>
     </div>
 </div>
 
-<!-- System Logs Panel (Initially Hidden) -->
-<div id="logs-panel" class="email-card" style="display: none; margin-bottom: 2rem;">
-    <div class="email-card-header">
-        <h3 class="email-card-title">
-            <i class="fas fa-clipboard-list"></i>
-            System Logs
-        </h3>
-        <button onclick="refreshLogs()" class="sync-button" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
-            <i class="fas fa-sync"></i>
-            <span>Refresh</span>
-        </button>
+<!-- Connected Accounts -->
+<div class="connected-accounts">
+    <h3>
+        <i class="fas fa-link"></i>
+        Connected Accounts ({{ total_accounts }})
+    </h3>
+
+    {% for account in email_accounts %}
+    <div class="account-item">
+        <div class="account-info">
+            <div class="account-provider-badge {{ account.provider }}">
+                {% if account.provider == 'gmail' %}
+                    <i class="fab fa-google"></i>
+                {% elif account.provider == 'outlook' %}
+                    <i class="fab fa-microsoft"></i>
+                {% endif %}
+            </div>
+            <div class="account-details">
+                <h4>{{ account.email }}</h4>
+                <p>{{ account.get_provider_display }} • Added {{ account.created_at|date:"M d, Y" }}</p>
+            </div>
+        </div>
+        <div class="account-actions">
+            <button class="btn-disconnect" onclick="disconnectAccount({{ account.id }}, '{{ account.email }}', '{{ account.get_provider_display }}')">
+                <i class="fas fa-unlink"></i> Disconnect
+            </button>
+        </div>
     </div>
-    <div style="padding: 1.5rem; max-height: 400px; overflow-y: auto; background: #f8f9fa;">
-        <pre id="logs-content" style="margin: 0; font-size: 0.85rem; color: #4a5568;">Loading logs...</pre>
+    {% endfor %}
+
+    <!-- Add more accounts -->
+    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; display: flex; gap: 1rem;">
+        {% if not has_gmail or gmail_accounts.count == 0 %}
+        <a href="{% url 'connect_gmail' %}" class="connect-btn" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">
+            <i class="fab fa-google"></i>
+            <span>Add Gmail</span>
+        </a>
+        {% endif %}
+        {% if not has_outlook or outlook_accounts.count == 0 %}
+        <a href="{% url 'connect_outlook' %}" class="connect-btn" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">
+            <i class="fab fa-microsoft"></i>
+            <span>Add Outlook</span>
+        </a>
+        {% endif %}
     </div>
 </div>
 
@@ -330,9 +542,9 @@
     <div class="email-card-header">
         <h3 class="email-card-title">
             <i class="fas fa-inbox"></i>
-            Recent Emails
+            Unified Inbox
         </h3>
-        <span style="color: #718096; font-size: 0.9rem;">{{ emails.count }} emails</span>
+        <span style="color: #718096; font-size: 0.9rem;">{{ emails.count }} email{{ emails.count|pluralize }} (last 50)</span>
     </div>
     <div class="email-list">
         {% if emails %}
@@ -347,6 +559,16 @@
                             <a href="{% url 'email_detail' email.id %}">
                                 {{ email.subject|default:"(No Subject)" }}
                             </a>
+                            <!-- Provider Badge -->
+                            {% if email.email_account %}
+                            <span class="email-provider-badge {{ email.email_account.provider }}">
+                                {% if email.email_account.provider == 'gmail' %}
+                                    <i class="fab fa-google"></i> Gmail
+                                {% elif email.email_account.provider == 'outlook' %}
+                                    <i class="fab fa-microsoft"></i> Outlook
+                                {% endif %}
+                            </span>
+                            {% endif %}
                         </div>
                         <div class="email-sender">
                             <i class="fas fa-user" style="margin-right: 0.25rem;"></i>
@@ -374,7 +596,7 @@
             <div class="empty-state">
                 <i class="fas fa-inbox"></i>
                 <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">No emails found</p>
-                <p style="font-size: 0.9rem;">Click "Sync Now" to fetch your latest emails</p>
+                <p style="font-size: 0.9rem;">Click "Sync All" to fetch your latest emails</p>
             </div>
         {% endif %}
     </div>
@@ -383,28 +605,18 @@
 {% endblock %}
 
 {% block extra_scripts %}
-// Sync emails function
-function syncEmails() {
+// Sync all accounts
+function syncAllAccounts() {
     const btn = event.target.closest('.sync-button');
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Syncing...</span>';
     btn.style.pointerEvents = 'none';
-    window.location.href = "{% url 'sync_emails' %}";
+    window.location.href = "{% url 'sync_all_accounts' %}";
 }
 
-function refreshLogs() {
-    fetch('/api/logs/')
-        .then(response => response.json())
-        .then(data => {
-            const logsContent = document.getElementById('logs-content');
-            if (data.success) {
-                logsContent.textContent = data.logs.join('');
-                logsContent.scrollTop = logsContent.scrollHeight;
-            } else {
-                logsContent.textContent = 'Error loading logs: ' + data.error;
-            }
-        })
-        .catch(error => {
-            document.getElementById('logs-content').textContent = 'Error fetching logs: ' + error;
-        });
+// Disconnect account with confirmation
+function disconnectAccount(accountId, email, provider) {
+    if (confirm(`Are you sure you want to disconnect ${provider} account ${email}?\n\nEmails will remain in the database but you won't be able to sync new emails.`)) {
+        window.location.href = `/disconnect-account/${accountId}/`;
+    }
 }
 {% endblock %}
