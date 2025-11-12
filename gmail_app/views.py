@@ -135,9 +135,26 @@ def dashboard(request):
         }
         return render(request, 'gmail_app/dashboard.html', context)
 
+    # Add sync statistics for each account
+    accounts_with_stats = []
+    for account in email_accounts:
+        # Get email count for this account
+        email_count = Email.objects.filter(email_account=account).count()
+
+        # Get last synced email (most recent email from this account)
+        last_email = Email.objects.filter(email_account=account).order_by('-received_date').first()
+        last_sync_date = last_email.received_date if last_email else None
+
+        accounts_with_stats.append({
+            'account': account,
+            'email_count': email_count,
+            'last_sync_date': last_sync_date
+        })
+
     context = {
         'emails': emails,
         'email_accounts': email_accounts,
+        'accounts_with_stats': accounts_with_stats,
         'gmail_accounts': gmail_accounts,
         'outlook_accounts': outlook_accounts,
         'has_accounts': True,

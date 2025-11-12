@@ -196,6 +196,38 @@
     transition: all 0.2s ease;
 }
 
+.account-sync-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.sync-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: #718096;
+    padding: 0.25rem 0.75rem;
+    background: #f7fafc;
+    border-radius: 6px;
+}
+
+.sync-stat i {
+    font-size: 0.8rem;
+    color: #4a5568;
+}
+
+.sync-stat.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.sync-stat.warning i {
+    color: #f59e0b;
+}
+
 .account-item:hover {
     background: #f8f9fa;
     border-color: #cbd5e0;
@@ -497,23 +529,37 @@
         Connected Accounts ({{ total_accounts }})
     </h3>
 
-    {% for account in email_accounts %}
+    {% for item in accounts_with_stats %}
     <div class="account-item">
         <div class="account-info">
-            <div class="account-provider-badge {{ account.provider }}">
-                {% if account.provider == 'gmail' %}
+            <div class="account-provider-badge {{ item.account.provider }}">
+                {% if item.account.provider == 'gmail' %}
                     <i class="fab fa-google"></i>
-                {% elif account.provider == 'outlook' %}
+                {% elif item.account.provider == 'outlook' %}
                     <i class="fab fa-microsoft"></i>
                 {% endif %}
             </div>
             <div class="account-details">
-                <h4>{{ account.email }}</h4>
-                <p>{{ account.get_provider_display }} • Added {{ account.created_at|date:"M d, Y" }}</p>
+                <h4>{{ item.account.email }}</h4>
+                <p style="margin-bottom: 0.5rem;">{{ item.account.get_provider_display }} • Added {{ item.account.created_at|date:"M d, Y" }}</p>
+                <div class="account-sync-info">
+                    <span class="sync-stat">
+                        <i class="fas fa-envelope"></i> {{ item.email_count }} email{{ item.email_count|pluralize }}
+                    </span>
+                    {% if item.last_sync_date %}
+                    <span class="sync-stat">
+                        <i class="fas fa-sync"></i> Last synced: {{ item.last_sync_date|date:"M d, Y g:i A" }}
+                    </span>
+                    {% else %}
+                    <span class="sync-stat warning">
+                        <i class="fas fa-exclamation-circle"></i> Not synced yet - Click "Sync All" above
+                    </span>
+                    {% endif %}
+                </div>
             </div>
         </div>
         <div class="account-actions">
-            <button class="btn-disconnect" onclick="disconnectAccount({{ account.id }}, '{{ account.email }}', '{{ account.get_provider_display }}')">
+            <button class="btn-disconnect" onclick="disconnectAccount({{ item.account.id }}, '{{ item.account.email }}', '{{ item.account.get_provider_display }}')">
                 <i class="fas fa-unlink"></i> Disconnect
             </button>
         </div>
