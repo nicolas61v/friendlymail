@@ -110,3 +110,6 @@ yarn-error.log*
 
 # Personal documentation
 selfread.md
+*.md
+!readme.md
+!README.md
