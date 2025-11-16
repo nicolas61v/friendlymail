@@ -113,3 +113,11 @@ selfread.md
 *.md
 !readme.md
 !README.md
+
+# Internal/temporary files
+ANALISIS_RESPUESTAS.txt
+DEPLOYMENT_SUMMARY.txt
+fix_role_topics.py
+fix_unicode_windows.py
+test_complete_system.py
+test_topic_validation.py
