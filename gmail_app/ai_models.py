@@ -162,9 +162,8 @@ class AIRole(models.Model):
         except cls.DoesNotExist:
             # Fall back to AIContext for backward compatibility
             try:
-                from .ai_models import AIContext
                 return AIContext.objects.get(user=user, is_active=True)
-            except:
+            except AIContext.DoesNotExist:
                 return None
 
 
@@ -298,32 +297,3 @@ class AIResponse(models.Model):
     
     def __str__(self):
         return f"Response to: {self.email_intent.email.subject[:30]} - {self.status}"
-
-
-class AIStats(models.Model):
-    """Statistics for AI performance"""
-    
-    ai_context = models.ForeignKey(AIContext, on_delete=models.CASCADE, related_name='stats')
-    
-    # Period
-    date = models.DateField()
-    
-    # Counts
-    emails_processed = models.IntegerField(default=0)
-    responses_generated = models.IntegerField(default=0)
-    responses_sent = models.IntegerField(default=0)
-    escalations = models.IntegerField(default=0)
-    
-    # Performance
-    avg_confidence = models.FloatField(default=0.0)
-    avg_processing_time_ms = models.IntegerField(default=0)
-    
-    # User satisfaction
-    user_approvals = models.IntegerField(default=0)
-    user_rejections = models.IntegerField(default=0)
-    
-    class Meta:
-        unique_together = ['ai_context', 'date']
-    
-    def __str__(self):
-        return f"{self.ai_context.user.username} - {self.date} - {self.emails_processed} emails"

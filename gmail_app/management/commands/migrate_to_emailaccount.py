@@ -46,12 +46,8 @@ class Command(BaseCommand):
                 count = emails.count()
 
                 if count > 0:
-                    # Update email_account and copy gmail_id to provider_id
+                    # Update email_account
                     for email in emails:
-                        # If provider_id is still 'temp' default, try to get it from legacy data
-                        if hasattr(email, 'gmail_id') and email.provider_id == 'temp':
-                            # This would only work if gmail_id field still exists temporarily
-                            pass
                         email.email_account = email_account
                         email.save(update_fields=['email_account'])
 

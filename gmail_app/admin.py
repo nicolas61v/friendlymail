@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import EmailAccount, GmailAccount, Email
-from .ai_models import TemporalRule, EmailIntent, AIResponse, AIStats
+from .ai_models import TemporalRule, EmailIntent, AIResponse
 
 
 @admin.register(EmailAccount)
@@ -44,14 +44,8 @@ class EmailIntentAdmin(admin.ModelAdmin):
     search_fields = ['email__subject', 'decision_reason']
 
 
-@admin.register(AIResponse) 
+@admin.register(AIResponse)
 class AIResponseAdmin(admin.ModelAdmin):
     list_display = ['email_intent', 'status', 'generated_at', 'sent_at']
     list_filter = ['status', 'generated_at', 'sent_at']
     search_fields = ['response_text', 'response_subject']
-
-
-@admin.register(AIStats)
-class AIStatsAdmin(admin.ModelAdmin):
-    list_display = ['ai_context', 'date', 'emails_processed', 'responses_sent', 'avg_confidence']
-    list_filter = ['date', 'ai_context']

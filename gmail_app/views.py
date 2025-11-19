@@ -289,10 +289,7 @@ def sync_emails_api(request):
     except RefreshTokenInvalidError as e:
         logger.warning(f"Token expired for user {request.user.username}: {e}")
         # Delete the expired account to force reconnection
-        try:
-            GmailAccount.objects.get(user=request.user).delete()
-        except GmailAccount.DoesNotExist:
-            pass
+        GmailAccount.objects.filter(user=request.user).delete()
         return JsonResponse({
             'success': False,
             'error': 'token_expired',
@@ -531,7 +528,6 @@ def ai_responses(request):
 @login_required
 def approve_response(request, response_id):
     """Approve and send AI response (allows retry for approved responses)"""
-    from django.db.models import Q
     try:
         # Accept both 'pending_approval' and 'approved' to allow retries
         # Support both email_account and gmail_account
@@ -610,7 +606,6 @@ def approve_response(request, response_id):
 @login_required
 def reject_response(request, response_id):
     """Reject AI response"""
-    from django.db.models import Q
     try:
         ai_response = AIResponse.objects.get(
             Q(email_intent__email__gmail_account__user=request.user) |
@@ -639,7 +634,6 @@ def reject_response(request, response_id):
 @login_required
 def resend_response(request, response_id):
     """Resend or send a previously sent/approved AI response"""
-    from django.db.models import Q
     try:
         # Accept both 'sent' and 'approved' statuses
         # Support both email_account and gmail_account
@@ -1226,8 +1220,6 @@ def ai_role_temporal_rule_delete(request, role_id, rule_id):
 @login_required
 def edit_response(request, response_id):
     """Edit AI response before sending"""
-    from django.db.models import Q
-
     try:
         # Support both email_account and gmail_account
         ai_response = AIResponse.objects.get(
@@ -1270,7 +1262,7 @@ def edit_response(request, response_id):
 @login_required
 def get_all_emails_with_ai_status(request):
     """API endpoint para obtener todos los emails con su estado de IA"""
-    from django.db.models import Q, Case, When, Value, IntegerField
+    from django.db.models import Case, When, Value, IntegerField
 
     try:
         # Obtener todos los emails del usuario
