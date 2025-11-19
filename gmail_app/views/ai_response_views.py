@@ -6,11 +6,17 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Q
-from ..models import Email, EmailAccount, GmailAccount
-from ..ai_models import AIRole, EmailIntent, AIResponse
+from ..models import Email
+from ..ai_models import AIRole, AIResponse
 from ..ai_service import EmailAIProcessor
 from ..gmail_service import GmailService
+from ..query_helpers import (
+    get_user_ai_response,
+    get_user_ai_responses_by_status,
+    count_user_emails,
+    count_user_responded_emails,
+    get_unprocessed_emails,
+)
 
 logger = logging.getLogger('gmail_app')
 
@@ -23,44 +29,15 @@ def ai_responses(request):
         ai_role = AIRole.objects.get(user=request.user, is_active=True)
         has_ai_role = True
 
-        # Build query to get responses from both email_account and gmail_account
-        pending_responses = AIResponse.objects.filter(
-            Q(email_intent__email__email_account__user=request.user) |
-            Q(email_intent__email__gmail_account__user=request.user),
-            status='pending_approval'
-        ).select_related('email_intent__email').order_by('-generated_at')
+        # Get responses by status using helper
+        pending_responses = get_user_ai_responses_by_status(request.user, 'pending_approval').order_by('-generated_at')
+        sent_responses = get_user_ai_responses_by_status(request.user, 'sent').order_by('-sent_at')[:50]
+        approved_responses = get_user_ai_responses_by_status(request.user, 'approved').order_by('-approved_at')
+        rejected_responses = get_user_ai_responses_by_status(request.user, 'rejected').order_by('-generated_at')[:20]
 
-        sent_responses = AIResponse.objects.filter(
-            Q(email_intent__email__email_account__user=request.user) |
-            Q(email_intent__email__gmail_account__user=request.user),
-            status='sent'
-        ).select_related('email_intent__email').order_by('-sent_at')[:50]
-
-        approved_responses = AIResponse.objects.filter(
-            Q(email_intent__email__email_account__user=request.user) |
-            Q(email_intent__email__gmail_account__user=request.user),
-            status='approved'
-        ).select_related('email_intent__email').order_by('-approved_at')
-
-        rejected_responses = AIResponse.objects.filter(
-            Q(email_intent__email__email_account__user=request.user) |
-            Q(email_intent__email__gmail_account__user=request.user),
-            status='rejected'
-        ).select_related('email_intent__email').order_by('-generated_at')[:20]
-
-        # Calcular estadísticas para el resumen
-        email_accounts = EmailAccount.objects.filter(user=request.user)
-        gmail_accounts = GmailAccount.objects.filter(user=request.user)
-
-        total_emails = Email.objects.filter(
-            Q(email_account__in=email_accounts) | Q(gmail_account__in=gmail_accounts)
-        ).count()
-
-        responded_emails = EmailIntent.objects.filter(
-            Q(email__email_account__in=email_accounts) |
-            Q(email__gmail_account__in=gmail_accounts),
-            airesponse__isnull=False
-        ).distinct().count()
+        # Calculate statistics using helpers
+        total_emails = count_user_emails(request.user)
+        responded_emails = count_user_responded_emails(request.user)
 
         context = {
             'ai_role': ai_role,
@@ -113,13 +90,8 @@ def ai_responses(request):
 def approve_response(request, response_id):
     """Approve and send AI response (allows retry for approved responses)"""
     try:
-        # Accept both 'pending_approval' and 'approved' to allow retries
-        # Support both email_account and gmail_account
-        ai_response = AIResponse.objects.get(
-            Q(email_intent__email__gmail_account__user=request.user) |
-            Q(email_intent__email__email_account__user=request.user),
-            id=response_id
-        )
+        # Get AI response using helper (supports both email_account and gmail_account)
+        ai_response = get_user_ai_response(request.user, response_id)
 
         # Only allow pending or approved (not sent or rejected)
         if ai_response.status not in ['pending_approval', 'approved']:
@@ -191,12 +163,8 @@ def approve_response(request, response_id):
 def reject_response(request, response_id):
     """Reject AI response"""
     try:
-        ai_response = AIResponse.objects.get(
-            Q(email_intent__email__gmail_account__user=request.user) |
-            Q(email_intent__email__email_account__user=request.user),
-            id=response_id,
-            status='pending_approval'
-        )
+        # Get AI response using helper, filtered by status
+        ai_response = get_user_ai_response(request.user, response_id, status_filter='pending_approval')
 
         ai_response.status = 'rejected'
         if request.POST.get('feedback'):
@@ -219,13 +187,8 @@ def reject_response(request, response_id):
 def resend_response(request, response_id):
     """Resend or send a previously sent/approved AI response"""
     try:
-        # Accept both 'sent' and 'approved' statuses
-        # Support both email_account and gmail_account
-        ai_response = AIResponse.objects.get(
-            Q(email_intent__email__gmail_account__user=request.user) |
-            Q(email_intent__email__email_account__user=request.user),
-            id=response_id
-        )
+        # Get AI response using helper (supports both email_account and gmail_account)
+        ai_response = get_user_ai_response(request.user, response_id)
 
         # Only allow resending for 'sent' or 'approved' responses
         if ai_response.status not in ['sent', 'approved']:
@@ -273,18 +236,11 @@ def resend_response(request, response_id):
 def edit_response(request, response_id):
     """Edit AI response before sending"""
     try:
-        # Support both email_account and gmail_account
-        ai_response = AIResponse.objects.get(
-            id=response_id,
-            status__in=['pending_approval', 'approved']
+        # Get AI response using helper, filtered by editable statuses
+        ai_response = get_user_ai_response(
+            request.user, response_id,
+            status_filter=['pending_approval', 'approved']
         )
-
-        # Verify user ownership
-        email = ai_response.email_intent.email
-        if not (email.email_account and email.email_account.user == request.user) and \
-           not (email.gmail_account and email.gmail_account.user == request.user):
-            messages.error(request, '❌ No tienes permiso para editar esta respuesta')
-            return redirect('ai_responses')
 
         if request.method == 'POST':
             # Update response text and subject
@@ -318,12 +274,8 @@ def process_existing_emails(request):
         # Get active AIRole
         ai_role = AIRole.objects.get(user=request.user, is_active=True)
 
-        # Get emails that haven't been processed by AI yet
-        unprocessed_emails = Email.objects.filter(
-            Q(email_account__user=request.user) | Q(gmail_account__user=request.user)
-        ).exclude(
-            id__in=EmailIntent.objects.values('email_id')
-        )[:10]  # Process max 10 emails at once to avoid timeout
+        # Get unprocessed emails using helper
+        unprocessed_emails = get_unprocessed_emails(request.user, limit=10)
 
         if not unprocessed_emails:
             messages.info(request, 'ℹ️ No unprocessed emails found. All emails have been analyzed by AI.')
